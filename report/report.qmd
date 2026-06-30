@@ -1,0 +1,27 @@
+---
+title: "Player-Base Decay Forecasting for Live-Service Games"
+subtitle: "Project report"
+author: "Sumer Jaitly"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    theme: cosmo
+    code-fold: true
+    code-tools: true
+  pdf:
+    toc: true
+    number-sections: true
+    pdf-engine: xelatex
+jupyter: python3
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# Summary of objective
+
+The goal of this project is to build a model that can take as an input the historical average player-count numbers for a game and predict a player-base collapse within a fixed future time window.

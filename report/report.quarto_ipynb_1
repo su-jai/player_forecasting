@@ -1,0 +1,48 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "c02187b6",
+   "metadata": {},
+   "source": [
+    "---\n",
+    "title: \"Player-Base Decay Forecasting for Live-Service Games\"\n",
+    "subtitle: \"Project report\"\n",
+    "author: \"Sumer Jaitly\"\n",
+    "date: today\n",
+    "format:\n",
+    "  html:\n",
+    "    toc: true\n",
+    "    toc-depth: 3\n",
+    "    number-sections: true\n",
+    "    theme: cosmo\n",
+    "    code-fold: true\n",
+    "    code-tools: true\n",
+    "  pdf:\n",
+    "    toc: true\n",
+    "    number-sections: true\n",
+    "    pdf-engine: xelatex\n",
+    "jupyter: python3\n",
+    "execute:\n",
+    "  echo: true\n",
+    "  warning: false\n",
+    "  message: false\n",
+    "---\n",
+    "\n",
+    "# Summary of objective\n",
+    "\n",
+    "The goal of this project is to build a model that can take as an input the historical average player-count numbers for a game and predict a player-base collapse within a fixed future time window."
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3",
+   "path": "/Users/sujai/Library/Python/3.14/share/jupyter/kernels/python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

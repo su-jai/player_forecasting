@@ -7,6 +7,7 @@ CLAUDE.md
 # --- Project data & documents (not tracked) ---
 data/
 project_documents/
+report/
 
 # --- macOS ---
 .DS_Store

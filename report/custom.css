@@ -1,0 +1,42 @@
+/* Replace Quarto's slider toggle with a plain sun/moon icon */
+.quarto-color-scheme-toggle {
+  opacity: 1 !important;
+}
+
+/* Keep the sun/moon toggle in view while scrolling.
+   Quarto floats it with `.top-right { position: absolute }`, which anchors it
+   to the page so it scrolls out of sight; `fixed` anchors it to the viewport
+   instead, so it follows you down the page like the sticky TOC.
+   (top/right are inherited from Quarto's .top-right rule — adjust here if the
+   icon ever collides with the table of contents.) */
+.quarto-color-scheme-toggle.top-right {
+  position: fixed;
+  z-index: 1050;
+}
+
+.quarto-color-scheme-toggle .bi::before {
+  /* Remove Quarto's default slider SVG and its 1rem box */
+  background-image: none !important;
+  width: auto !important;
+  height: auto !important;
+  font-size: 1.6rem !important; /* bump this to resize the icon */
+  line-height: 1;
+}
+
+/* Light mode: show a moon (click to switch to dark) */
+.quarto-color-scheme-toggle .bi::before {
+  content: "\f495" !important; /* bi-moon-stars-fill */
+}
+
+/* Dark mode (.alternate is added when dark is active): show a sun */
+.quarto-color-scheme-toggle.alternate .bi::before {
+  content: "\f5a1" !important; /* bi-sun-fill */
+  color: #fd7e14 !important;
+}
+
+/* Dark mode: highlight the active TOC section in orange instead of green */
+body.quarto-dark .sidebar nav[role=doc-toc] ul > li > a.active,
+body.quarto-dark .sidebar nav[role=doc-toc] ul > li > ul > li > a.active {
+  color: #fd7e14 !important;
+  border-left-color: #fd7e14 !important;
+}

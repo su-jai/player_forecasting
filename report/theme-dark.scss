@@ -1,0 +1,42 @@
+/*-- scss:defaults --*/
+// Dark mode as a colour-only variant of cosmo.
+// Light mode uses cosmo; dark mode layers these colour overrides on top of
+// the SAME cosmo theme, so fonts, sizes and spacing are identical in both
+// modes and toggling never reflows or "distorts" the text.
+// Palette borrowed from Bootswatch darkly.
+
+$body-bg: #222222;
+$body-color: #ffffff;
+$primary: #375a7f;
+$secondary: #444444;
+$success: #00bc8c;
+$link-color: #00bc8c;
+$border-color: #494949;
+
+// code
+$code-bg: #2f2f2f;
+$code-color: #e685b5;
+$code-block-bg: #2b2b2b;
+
+// tables and rules
+$table-border-color: #494949;
+$hr-border-color: #494949;
+
+/*-- scss:rules --*/
+// keep the TOC and callout borders visible on the dark background
+.sidebar nav[role="doc-toc"] ul > li > a {
+  color: #b8bcc0;
+}
+
+// Plain code blocks with no language (e.g. the ASCII sliding-window diagram)
+// render as a bare <pre><code> with no syntax-highlight theme, so their text
+// colour is otherwise fixed and ignores the dark-mode toggle. Force it.
+pre:not(.sourceCode) {
+  background-color: #2b2b2b;
+  color: #d0d0d0;
+
+  code {
+    color: inherit;
+    background-color: transparent;
+  }
+}

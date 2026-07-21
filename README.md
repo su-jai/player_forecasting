@@ -4,6 +4,8 @@ This is a short personal project intended to give a playground in which to apply
 
 The objective is to take a database of historical playercounts for video games and build a model that is able to predict the playercount at some predefined time into the future.
 
+I have made liberal useage of Claude Code in this project to help speed up the generation of code as well as to clean up and streamline my notebooks and produce a nice looking Quarto report. The contents of the report however are written solely by myself.
+
 
 # Objectives completed
 

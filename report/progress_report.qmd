@@ -14,10 +14,6 @@ format:
     css: custom.css
     code-fold: true
     code-tools: true
-  pdf:
-    toc: true
-    number-sections: true
-    pdf-engine: xelatex
 jupyter: python3
 execute:
   echo: true

@@ -85,7 +85,7 @@ The resulting performances are in the below table.
 | Linear extrapolation of the window | 1.135 |
 
 ## Linear regression on summary statistics
-
+As a first step beyond baseline models we can try to fit a linear regression model to a set of summary statistics that are derived from the input 56 day window. As a first try we can consider...
 
 ## Gradient-boosted trees
 

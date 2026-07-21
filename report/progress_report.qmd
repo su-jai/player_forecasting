@@ -72,7 +72,7 @@ This procedure applied to the dataset resulted in ~150k example data points to t
 
 # Baselines and models
 ## Baselines
-Before evaluating various models, we should set a benchmark or baseline performance measure against which to judge. We take the performance metric to be the root mean squared error of the log transformed target and choose two crude baseline models: 
+Before evaluating various models, we should set a benchmark or baseline performance measure against which to judge. We take the performance metric to be the root mean squared error of the log transformed target and choose two crude baseline models (all linear approximations are rectified so as to not produce negative predictions): 
 
 1) linear extrapolation: take a straight line through the CNA count at the start and end of the input window and extrapolate it 56 + 7 days into the future and predict that value. 
 2) a dummy regressor with 'mean' strategy: compute the mean of the target across all training examples and predict this for any input.
@@ -83,6 +83,17 @@ The resulting performances are in the below table.
 |---|---|
 | Dummy (predict the mean) | 1.052 |
 | Linear extrapolation of the window | 1.135 |
+
+For the linear extrapolation above we only used the boundary points of the window which could be misrepresentative of the entire window due to random fluctuations, so two other slightly more sophisticated baseline models are:
+
+3) Linear fit to input window CNA playercounts using least squares and extrapolation of this line to the future window.
+4) Linear fit to the log of the input window CNA playercounts using least squares and extrapolation as above.
+
+| Model | CV RMSE (log target) |
+|---|---|
+| Linear fit to CNA | 1.331 |
+| Linear fit to log CNA | 1.039 |
+
 
 ## Linear regression on summary statistics
 As a first step beyond baseline models we can try to fit a linear regression model to a set of summary statistics that are derived from the input 56 day window. As a first try we can consider...

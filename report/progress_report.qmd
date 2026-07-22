@@ -77,7 +77,7 @@ Before evaluating various models, we should set a benchmark or baseline performa
 1) linear extrapolation: take a straight line through the CNA count at the start and end of the input window and extrapolate it 56 + 7 days into the future and predict that value. 
 2) a dummy regressor with 'mean' strategy: compute the mean of the target across all training examples and predict this for any input.
 
-The resulting performances are in the below table, reported in terms of root-mean-squared-error (RMSE) on the log target. To get a measure of the actual error that the model will have when predicting the actual playercounts themselves rather than their logarithm one should calculate $\exp(\textrm{RMSE})$. For example the dummy model below has a log target RMSE of 1.052 which would translate to $\exp(1.052)\approx 2.863 $ which is an error of 186%.
+The resulting performances are in the below table, reported in terms of root-mean-squared-error (RMSE) on the log target. To get a measure of the actual error that the model will have when predicting the actual playercounts themselves rather than their logarithm one should calculate $\exp(\textrm{RMSE})$. For example the dummy model below has a log target RMSE of 1.052 which would translate to $\exp(1.052)\approx 2.863$ which corresponds to an error on the raw playercounts of around 186%.
 
 | Model | CV RMSE (log target) |
 |---|---|
@@ -101,19 +101,19 @@ As a first step beyond baseline models we can try to fit a linear regression mod
 
 ## Gradient-boosted trees
 
-<!-- TODO: HistGradientBoostingRegressor, default hyperparameters,
-56 window values + time index + log causal peak -> CV RMSE 0.4471.
-One paragraph on why boosted trees suit this data: scale-invariance,
-native NaN handling, interactions via splits, strong at ~10^5 tabular rows. -->
+Gradient boosted tree based methods are typically recommended for learning from time series data. The reasons behind using boosted trees are: ... (Scale inv, nan handling, large tabular rows, interactions via splits) (fill in section)
 
 
 
+We use scikit-learn's HistGradientBoostingRegressor trained on an input consisting of the 56-day input window as before, but supplemented with the date index of the input window's final day (i.e. the current time $t$), as well as the logarithm of the historical (causal) CNA peak of the game. This last feature was included to re-introduce information about the overall size of the game's playerbase which was lost when we performed causal normalisation in order to get the features uniformly normalised across different games. The result after training with default hyperparameters is:
 
 
 | Model | CV RMSE | Typical multiplicative error |
 |---|---|---|
 | Dummy | 1.052 | ×/÷ 2.9 |
 | HistGBR (window + time + log peak) | 0.4471 | ×/÷ 1.6 |
+
+showing a vast improvement over the dummy model, even before any hyperparameter tuning.
 
 # The information ceiling
 

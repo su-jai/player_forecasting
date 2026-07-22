@@ -2669,7 +2669,7 @@ Figure 1: Training target distribution, before and after the log transform. The
 <li>linear extrapolation: take a straight line through the CNA count at the start and end of the input window and extrapolate it 56 + 7 days into the future and predict that value.</li>
 <li>a dummy regressor with ‘mean’ strategy: compute the mean of the target across all training examples and predict this for any input.</li>
 </ol>
-<p>The resulting performances are in the below table, reported in terms of root-mean-squared-error (RMSE) on the log target. To get a measure of the actual error that the model will have when predicting the actual playercounts themselves rather than their logarithm one should calculate <span class="math inline">\(\exp(\textrm{RMSE})\)</span>. For example the dummy model below has a log target RMSE of 1.052 which would translate to $(1.052) $ which is an error of 186%.</p>
+<p>The resulting performances are in the below table, reported in terms of root-mean-squared-error (RMSE) on the log target. To get a measure of the actual error that the model will have when predicting the actual playercounts themselves rather than their logarithm one should calculate <span class="math inline">\(\exp(\textrm{RMSE})\)</span>. For example the dummy model below has a log target RMSE of 1.052 which would translate to <span class="math inline">\(\exp(1.052)\approx 2.863\)</span> which corresponds to an error on the raw playercounts of around 186%.</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -2721,10 +2721,8 @@ Figure 1: Training target distribution, before and after the log transform. The
 </section>
 <section id="gradient-boosted-trees" class="level2" data-number="3.3">
 <h2 data-number="3.3" class="anchored" data-anchor-id="gradient-boosted-trees"><span class="header-section-number">3.3</span> Gradient-boosted trees</h2>
-<!-- TODO: HistGradientBoostingRegressor, default hyperparameters,
-56 window values + time index + log causal peak -> CV RMSE 0.4471.
-One paragraph on why boosted trees suit this data: scale-invariance,
-native NaN handling, interactions via splits, strong at ~10^5 tabular rows. -->
+<p>Gradient boosted tree based methods are typically recommended for learning from time series data. The reasons behind using boosted trees are: … (Scale inv, nan handling, large tabular rows, interactions via splits) (fill in section)</p>
+<p>We use scikit-learn’s HistGradientBoostingRegressor trained on an input consisting of the 56-day input window as before, but supplemented with the date index of the input window’s final day (i.e. the current time <span class="math inline">\(t\)</span>), as well as the logarithm of the historical (causal) CNA peak of the game. This last feature was included to re-introduce information about the overall size of the game’s playerbase which was lost when we performed causal normalisation in order to get the features uniformly normalised across different games. The result after training with default hyperparameters is:</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -2746,6 +2744,7 @@ native NaN handling, interactions via splits, strong at ~10^5 tabular rows. -->
 </tr>
 </tbody>
 </table>
+<p>showing a vast improvement over the dummy model, even before any hyperparameter tuning.</p>
 </section>
 </section>
 <section id="the-information-ceiling" class="level1" data-number="4">
@@ -3401,7 +3400,7 @@ citation if desired. -->
 <span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a>1) linear extrapolation: take a straight line through the CNA count at the start and end of the input window and extrapolate it 56 + 7 days into the future and predict that value. </span>
 <span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a>2) a dummy regressor with &#39;mean&#39; strategy: compute the mean of the target across all training examples and predict this for any input.</span>
 <span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a>The resulting performances are in the below table, reported in terms of root-mean-squared-error (RMSE) on the log target. To get a measure of the actual error that the model will have when predicting the actual playercounts themselves rather than their logarithm one should calculate $\exp(\textrm{RMSE})$. For example the dummy model below has a log target RMSE of 1.052 which would translate to $\exp(1.052)\approx 2.863 $ which is an error of 186%.</span>
+<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a>The resulting performances are in the below table, reported in terms of root-mean-squared-error (RMSE) on the log target. To get a measure of the actual error that the model will have when predicting the actual playercounts themselves rather than their logarithm one should calculate $\exp(\textrm{RMSE})$. For example the dummy model below has a log target RMSE of 1.052 which would translate to $\exp(1.052)\approx 2.863$ which corresponds to an error on the raw playercounts of around 186%.</span>
 <span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Model <span class="pp">|</span> CV RMSE (log target) <span class="pp">|</span></span>
 <span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|</span></span>
@@ -3425,19 +3424,19 @@ citation if desired. -->
 <span id="cb2-101"><a href="#cb2-101" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-102"><a href="#cb2-102" aria-hidden="true" tabindex="-1"></a><span class="fu">## Gradient-boosted trees</span></span>
 <span id="cb2-103"><a href="#cb2-103" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-104"><a href="#cb2-104" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- </span><span class="al">TODO</span><span class="co">: HistGradientBoostingRegressor, default hyperparameters,</span></span>
-<span id="cb2-105"><a href="#cb2-105" aria-hidden="true" tabindex="-1"></a><span class="co">56 window values + time index + log causal peak -&gt; CV RMSE 0.4471.</span></span>
-<span id="cb2-106"><a href="#cb2-106" aria-hidden="true" tabindex="-1"></a><span class="co">One paragraph on why boosted trees suit this data: scale-invariance,</span></span>
-<span id="cb2-107"><a href="#cb2-107" aria-hidden="true" tabindex="-1"></a><span class="co">native NaN handling, interactions via splits, strong at ~10^5 tabular rows. --&gt;</span></span>
-<span id="cb2-108"><a href="#cb2-108" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-104"><a href="#cb2-104" aria-hidden="true" tabindex="-1"></a>Gradient boosted tree based methods are typically recommended for learning from time series data. The reasons behind using boosted trees are: ... (Scale inv, nan handling, large tabular rows, interactions via splits) (fill in section)</span>
+<span id="cb2-105"><a href="#cb2-105" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-106"><a href="#cb2-106" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-107"><a href="#cb2-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-108"><a href="#cb2-108" aria-hidden="true" tabindex="-1"></a>We use scikit-learn&#39;s HistGradientBoostingRegressor trained on an input consisting of the 56-day input window as before, but supplemented with the date index of the input window&#39;s final day (i.e. the current time $t$), as well as the logarithm of the historical (causal) CNA peak of the game. This last feature was included to re-introduce information about the overall size of the game&#39;s playerbase which was lost when we performed causal normalisation in order to get the features uniformly normalised across different games. The result after training with default hyperparameters is:</span>
 <span id="cb2-109"><a href="#cb2-109" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-110"><a href="#cb2-110" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-111"><a href="#cb2-111" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-112"><a href="#cb2-112" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-113"><a href="#cb2-113" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Model <span class="pp">|</span> CV RMSE <span class="pp">|</span> Typical multiplicative error <span class="pp">|</span></span>
-<span id="cb2-114"><a href="#cb2-114" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|</span></span>
-<span id="cb2-115"><a href="#cb2-115" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Dummy <span class="pp">|</span> 1.052 <span class="pp">|</span> ×/÷ 2.9 <span class="pp">|</span></span>
-<span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> HistGBR (window + time + log peak) <span class="pp">|</span> 0.4471 <span class="pp">|</span> ×/÷ 1.6 <span class="pp">|</span></span>
+<span id="cb2-111"><a href="#cb2-111" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Model <span class="pp">|</span> CV RMSE <span class="pp">|</span> Typical multiplicative error <span class="pp">|</span></span>
+<span id="cb2-112"><a href="#cb2-112" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|</span></span>
+<span id="cb2-113"><a href="#cb2-113" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Dummy <span class="pp">|</span> 1.052 <span class="pp">|</span> ×/÷ 2.9 <span class="pp">|</span></span>
+<span id="cb2-114"><a href="#cb2-114" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> HistGBR (window + time + log peak) <span class="pp">|</span> 0.4471 <span class="pp">|</span> ×/÷ 1.6 <span class="pp">|</span></span>
+<span id="cb2-115"><a href="#cb2-115" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a>showing a vast improvement over the dummy model, even before any hyperparameter tuning.</span>
 <span id="cb2-117"><a href="#cb2-117" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-118"><a href="#cb2-118" aria-hidden="true" tabindex="-1"></a><span class="fu"># The information ceiling</span></span>
 <span id="cb2-119"><a href="#cb2-119" aria-hidden="true" tabindex="-1"></a></span>

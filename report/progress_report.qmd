@@ -77,7 +77,7 @@ Before evaluating various models, we should set a benchmark or baseline performa
 1) linear extrapolation: take a straight line through the CNA count at the start and end of the input window and extrapolate it 56 + 7 days into the future and predict that value. 
 2) a dummy regressor with 'mean' strategy: compute the mean of the target across all training examples and predict this for any input.
 
-The resulting performances are in the below table.
+The resulting performances are in the below table, reported in terms of root-mean-squared-error (RMSE) on the log target. To get a measure of the actual error that the model will have when predicting the actual playercounts themselves rather than their logarithm one should calculate $\exp(\textrm{RMSE})$. For example the dummy model below has a log target RMSE of 1.052 which would translate to $\exp(1.052)\approx 2.863 $ which is an error of 186%.
 
 | Model | CV RMSE (log target) |
 |---|---|
@@ -94,6 +94,7 @@ For the linear extrapolation above we only used the boundary points of the windo
 | Linear fit to CNA | 1.331 |
 | Linear fit to log CNA | 1.039 |
 
+### A note about the RMSE
 
 ## Linear regression on summary statistics
 As a first step beyond baseline models we can try to fit a linear regression model to a set of summary statistics that are derived from the input 56 day window. As a first try we can consider...

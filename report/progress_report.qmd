@@ -88,20 +88,11 @@ For the linear extrapolation above we only used the boundary points of the windo
 | Linear fit to CNA | 1.331 |
 | Linear fit to log CNA | 1.039 |
 
-![Various baseline model predictions on an example training window.](figs/extrapolation_baselines.svg){#fig-baselines width=100%}
-
-### A note about the RMSE
-
-## Linear regression on summary statistics
-As a first step beyond baseline models we can try to fit a linear regression model to a set of summary statistics that are derived from the input 56 day window. As a first try we can consider...
+![Various baseline model predictions on an example training window. The orange curve is a linear extrapolation using only the end points of the input window, the purple is a linear fit to the CNA playercounts of the input window and the green is a linear fit to the log of the CNA. The actual CNA future values are shown in the background.](figs/extrapolation_baselines.svg){#fig-baselines width=100%}
 
 ## Gradient-boosted trees
 
-Gradient boosted tree based methods are typically recommended for learning from tabular time series data. The motivation behind using boosted trees are that they can find
-
-
-
-: ... (Scale inv, nan handling, large tabular rows, interactions via splits) (fill in section)
+Gradient boosted tree based methods are typically recommended for learning from tabular time series data. The motivation behind using boosted trees are that they can find non-linear mappings between features and the target, and also that they naturally handle features of different types and scales (such as the time index feature we use) naturally.
 
 We use scikit-learn's HistGradientBoostingRegressor trained on an input consisting of the 56-day input window as before, but supplemented with the date index of the input window's final day (i.e. the current time $t$), as well as the logarithm of the historical (causal) CNA peak of the game. This last feature was included to re-introduce information about the overall size of the game's playerbase which was lost when we performed causal normalisation in order to get the features uniformly normalised across different games. The result after training with default hyperparameters is:
 

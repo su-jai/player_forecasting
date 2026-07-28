@@ -29,7 +29,9 @@ Build a machine learning program that allows a user to input a CSV file of histo
 
 The motivation for such a model would be for developers and publishers of video games to have an early warning of severe playercount decline, upon which appropriate actions could be taken to mitigate such an event.
 
-**Dataset.** The model has been developed using *Steam Games Dataset: Player count history, Price history and data about games* — Wannigamage, Barlow, Lakshika & Kasmarik (UNSW Canberra), 2020. DOI [10.17632/ycy3sy3vj2.1](https://data.mendeley.com/datasets/ycy3sy3vj2/1), CC BY 4.0. This dataset consists of playercounts for 2000 Steam games (chosen as the games with the highest playercount within the 24 hours ending on the 11th December 2017) over a ~3 year period. The dataset has been truncated at the 14th of March 2020, approximately the beginning of the global COVID pandemic to remove the possibility of learning anomalous patterns of playercounts brought on by lockdowns.
+**Dataset.** The model has been developed using *Steam Games Dataset: Player count history, Price history and data about games* — Wannigamage, Barlow, Lakshika & Kasmarik (UNSW Canberra), 2020. DOI [10.17632/ycy3sy3vj2.1](https://data.mendeley.com/datasets/ycy3sy3vj2/1), CC BY 4.0. This dataset consists of playercounts for 2000 Steam games (chosen as the games with the highest playercount within the 24 hours ending on the 11th December 2017) over a ~3 year period. 
+
+The dataset has been truncated at the 14th of March 2020, approximately the beginning of the global COVID pandemic to remove the possibility of learning anomalous patterns of playercounts brought on by lockdowns.
 
 # Data engineering
 
@@ -88,7 +90,46 @@ For the linear extrapolation above we only used the boundary points of the windo
 | Linear fit to CNA | 1.331 |
 | Linear fit to log CNA | 1.039 |
 
-![Various baseline model predictions on an example training window. The orange curve is a linear extrapolation using only the end points of the input window, the purple is a linear fit to the CNA playercounts of the input window and the green is a linear fit to the log of the CNA. The actual CNA future values are shown in the background.](figs/extrapolation_baselines.svg){#fig-baselines width=100%}
+The three baselines are compared below on 50 randomly sampled training windows — drag the slider (or type a number) to browse them. The orange curve is the linear extrapolation using only the end points of the input window, the purple is a linear fit to the CNA playercounts of the input window and the green is a linear fit to the log of the CNA. The blue curve is the input window the models see; the actual CNA future values, which they do not, are shown in grey in the background.
+
+```{=html}
+<style>
+  #extrap-viewer #extrap-number {
+    background: transparent;
+    color: inherit;
+    border: 1px solid rgba(128, 128, 128, 0.5);
+    border-radius: 3px;
+    padding: 0.1em 0.2em;
+  }
+  #extrap-viewer label { color: inherit; }
+</style>
+<div id="extrap-viewer" style="margin: 0.5em 0 1.5em 0;">
+  <div style="display: flex; align-items: center; gap: 0.75em; margin-bottom: 0.5em;">
+    <label for="extrap-slider" style="white-space: nowrap;">Example
+      <input type="number" id="extrap-number" min="1" max="50" value="1"
+             style="width: 4em; text-align: center;"> of 50</label>
+    <input type="range" id="extrap-slider" min="1" max="50" value="1"
+           style="flex: 1;" aria-label="choose example window">
+  </div>
+  <img id="extrap-img" src="figs/extrap_examples/example_01.svg"
+       style="width: 100%;" alt="Three extrapolation baselines on a randomly sampled training window">
+</div>
+<script>
+  (function () {
+    const slider = document.getElementById("extrap-slider");
+    const number = document.getElementById("extrap-number");
+    const img = document.getElementById("extrap-img");
+    function show(v) {
+      v = Math.min(50, Math.max(1, Math.round(Number(v) || 1)));
+      slider.value = v;
+      number.value = v;
+      img.src = `figs/extrap_examples/example_${String(v).padStart(2, "0")}.svg`;
+    }
+    slider.addEventListener("input", () => show(slider.value));
+    number.addEventListener("change", () => show(number.value));
+  })();
+</script>
+```
 
 ## Gradient-boosted trees
 
@@ -103,6 +144,8 @@ We use scikit-learn's HistGradientBoostingRegressor trained on an input consisti
 | HistGBR (window + time + log peak) | 0.4471 | ×/÷ 1.6 |
 
 showing a vast improvement over the dummy model, even before any hyperparameter tuning.
+
+### Hyperparameter tuning does not help
 
 # The information ceiling
 

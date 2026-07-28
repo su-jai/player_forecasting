@@ -7,7 +7,19 @@ CLAUDE.md
 # --- Project data & documents (not tracked) ---
 data/
 project_documents/
-report/
+
+# --- Report ---
+# Track the sources and the figures they reference, so a fresh clone renders.
+# Everything else here is a build output (regenerate with `quarto render`).
+# Note: a bare `report/` rule would make these negations impossible — git does
+# not descend into an excluded directory — hence the exclude-then-allow form.
+report/*
+!report/*.qmd
+!report/*.tex
+!report/*.bib
+!report/*.css
+!report/*.scss
+!report/figs/
 
 # --- macOS ---
 .DS_Store
@@ -24,3 +36,4 @@ env/
 # --- Jupyter ---
 .ipynb_checkpoints/
 */.ipynb_checkpoints/
+ml-project-checklist.md

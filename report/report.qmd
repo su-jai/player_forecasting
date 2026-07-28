@@ -1,0 +1,87 @@
+---
+title: "Playerbase Decay Forecasting for Replayable Games"
+subtitle: "Project report"
+author: "Sumer Jaitly"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    theme:
+      light: cosmo
+      dark: [cosmo, theme-dark.scss]
+    css: custom.css
+    code-fold: true
+    code-tools: true
+  pdf:
+    toc: true
+    number-sections: true
+    pdf-engine: xelatex
+jupyter: python3
+execute:
+  echo: true
+  warning: false
+  message: false
+bibliography: references.bib
+
+---
+
+# Summary of objective
+
+The goal of this project is to build a model that can take as an input the historical average player-count numbers for a game and predict a playerbase collapse (what we mean by "playerbase collapse" will be elucidated later) within a fixed future time window.
+
+## Scope
+Not all games are meant to be played for an extended amount of time after release. Story based single-player games will usually be played once or twice and then put down. Our question is therefore pertinent only to games that have a "replayability factor", that is, that they are intended to be played multiple times over a longer time span. 
+
+A good indicator of a game's replayability factor could be its *average playtime*, since replayable games will typically have playtimes that exceed the 10-20 hour range. Games in this category will usually be either primarily online multiplayer focussed (e.g. Counter-Strike or Dota 2), or have a sandbox element (e.g. 'Kerbal Space Program'), or have live-service style updates (e.g. 'The Long Dark').
+
+## What constitutes 'playerbase collapse'?
+Playerbase collapse is not a well defined event and so we must pick a well motivated definition to work with. As a first attempt we might choose to designate a playerbase as "collapsed" if its average value over some period of time is below a threshold percentage of its all-time historical peak. The issue with this is that the magnitude of the all-time historical peak may not be indicative of the scale of a future sustained playerbase.
+
+For example, the game "Among Us" reached an all-time peak of 447,476 concurrent users (cite steamdb) and proceeded to maintain a stable playerbase of around 10,000 - 20,000 users from June 2021 to June 2026, which amounts to about 2 - 4% of its peak. Whilst the decline from its peak playercount is severe, the stability of the playerbase over a large period of time at a value that is *not too low* should not constitute 'collapse'. Again, we will have to be precise about what 'too low' means.
+
+Putting oneself in the mind of the game developer / operations team -- what would be the most useful thing to forecast about *my* game? In other words, what information would be the most useful to inform my development decisions? The first thing that comes to mind is some measure of average playercount at a fixed time in the future. This target variable is much more flexible in its usefulness, because each individual game has its own longevity goals which cannot be easily generalised even across specific genres. Having a clear estimate for the average playercount in the future can provide an early warning of a declining playerbase that could be bolstered with early enough intervention -- for example with a free trial weekend or content update. 
+
+## Limitations
+- Single-player story based games don't really follow the patterns and shouldn't really be included because they are played once and then finished. We should filter out games which are not designed to be played multiple times. Whilst there is no direct tag for this on Steam - we could potentially add a step that infers this based on its tags.
+- The data covers the top 2000 games on Steam with the highest playercount within the last 24 hours on 11-12-17, and hence the model may perform poorly on games that have not ever reached the threshold of being in the this top 2000 at any point in their lifetime.
+
+
+# The data
+
+To train and test our model we will be using the dataset taken from [@8848108]. This contains playercounts over the period 14-12-17 to 12-08-20 for the top 2000 games on Steam (ranked by playercount) taken over 5-minute intervals for the top 1000 and hourly intervals for the rest. The dataset also includes the price history for the games as well as "tags" for each game, which are categorical descriptions of each game (for example: "survival", "free to play", etc.).
+
+## Typical observed patterns
+Generally, a game has three broad phases:
+
+1. Initial spike: upon release, there is a large influx of players that cause the playercount to hit a peak (usually the all-time peak).
+2. Decline: the playercount decreases away from the peak value, possibly with 
+3. Steady state or collapse: the playercount will either sustain a stable playerbase or remain decreasing until an unsustainable playerbase is reached.
+
+
+## Potentially useful input features
+
+The primary feature we will be using to predict will be a time series of  playercounts -- from which we might possibly also engineer derived features. Another useful input feature could be the tags for each game, which can be one-hot-encoded.
+
+
+# The target
+We choose the target variable to be the 14-day averaged playercount 60 days into the future from the end of the last day in the input playercount series.
+
+
+# Implementing the model
+In this section we'll walk through a concrete implementation of a model, describing the steps:
+
+- Obtaining the data, visualising it and processing it for an ML algorithm.
+- Selecting an ML algorithm, training and evaluating on a dev/test set. 
+- Hyperparameter optimisation on the model.
+- Evaluating on a test set.
+
+## Processing the data
+
+Playercounts taken over five minute or one hour intervals are too fine-grained for our purposes, as the variation of playercount within a timeframe of roughly one day or one hour would not be naively expected to carry signals of playerbase collapse. Therefore the first step is to bin the playercounts by day and take the daily average of these counts to get a more coarse-grained dataset. This also evens out the difference in granularity between the two sets of games in the dataset.
+
+# Extensions
+Fold in twitch viewership data.
+
+# References

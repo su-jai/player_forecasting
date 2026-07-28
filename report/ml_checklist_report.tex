@@ -1,0 +1,551 @@
+% ============================================================================
+%  Player-Base Decay Forecasting -- ML Project Checklist Report
+%  Framework adapted from A. Geron's "Machine Learning Project Checklist"
+%  (Hands-On Machine Learning with Scikit-Learn, Keras & TensorFlow, App. B).
+%  Each checklist item records what the project has done so far; items in
+%  sections not yet reached are left blank to be filled in later.
+%  Compile with pdflatex.
+% ============================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage[colorlinks=true]{hyperref}
+
+% ---------------------------------------------------------------------------
+% Palette and status badges
+% ---------------------------------------------------------------------------
+\definecolor{accent}{RGB}{28,60,110}     % deep blue: headings, links
+\definecolor{stdone}{RGB}{36,120,66}     % green:  completed
+\definecolor{stwip}{RGB}{176,108,12}     % amber:  in progress
+\definecolor{sttodo}{RGB}{125,125,125}   % gray:   not started
+\definecolor{soft}{RGB}{95,95,95}        % gray text for guidance notes
+
+\hypersetup{linkcolor=accent, urlcolor=accent, citecolor=accent,
+            pdftitle={Player-Base Decay Forecasting: ML Project Checklist Report},
+            pdfauthor={Sumer Jaitly}}
+
+\titleformat{\section}{\Large\bfseries\color{accent}}{\thesection.}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.6em}
+
+\newcommand{\StatusBadge}[2]{\colorbox{#1}{\textcolor{white}{\sffamily\bfseries\footnotesize\;#2\;}}}
+\newcommand{\SectionStatus}[2]{\noindent\StatusBadge{#1}{#2}\par\medskip}
+
+% Checklist item: bold prompt, answer follows in normal text
+\newlist{checklist}{enumerate}{1}
+\setlist[checklist]{label=\textbf{\arabic*.}, ref=\arabic*, leftmargin=2em,
+                    itemsep=0.9em, topsep=0.5em}
+\newcommand{\chk}[1]{\item \textbf{#1}\par\nopagebreak\vspace{0.15em}}
+
+% Gray italic marker for individual items not yet addressed
+\newcommand{\pending}[1][Not yet addressed.]{\textcolor{sttodo}{\itshape #1}}
+% Blank writing space for sections not yet reached
+\newcommand{\blankanswer}{\vspace{2.8em}}   % TODO: fill in when this step is reached
+% Guidance notes carried over from the checklist itself
+\newcommand{\guidance}[1]{\textcolor{soft}{\small\itshape Checklist note: #1}\par\medskip}
+
+\setlength{\emergencystretch}{2em}
+\raggedbottom
+
+% ============================================================================
+\begin{document}
+
+% ---------------------------------------------------------------------------
+% Title block
+% ---------------------------------------------------------------------------
+\begin{center}
+  {\color{accent}\rule{\textwidth}{1.2pt}}\\[1.2em]
+  {\LARGE\bfseries Player-Base Decay Forecasting for Live-Service Games}\\[0.5em]
+  {\large Machine-Learning Project Checklist Report}\\[1.0em]
+  Sumer Jaitly \quad$\cdot$\quad \today\\[1.0em]
+  {\color{accent}\rule{\textwidth}{1.2pt}}
+\end{center}
+
+\vspace{0.5em}
+\noindent
+This document turns the standard machine-learning project
+checklist\footnote{Adapted from Aur\'elien G\'eron, \emph{Hands-On Machine
+Learning with Scikit-Learn, Keras \& TensorFlow}, O'Reilly --- Appendix
+``Machine Learning Project Checklist''.} into a living report for this
+project. Each of the eight steps below reproduces the checklist's items;
+under every item we record what the project has actually done. Items in
+steps we have not yet reached are left blank, to be filled in as the work
+progresses.
+
+\subsection*{Progress at a glance}
+\begin{center}
+\begin{tabular}{@{}c l l@{}}
+\toprule
+\textbf{Step} & \textbf{Checklist stage} & \textbf{Status}\\
+\midrule
+1 & Frame the problem and look at the big picture & \StatusBadge{stdone}{COMPLETED}\\
+2 & Get the data                                   & \StatusBadge{stdone}{COMPLETED}\\
+3 & Explore the data                               & \StatusBadge{stdone}{COMPLETED}\\
+4 & Prepare the data                               & \StatusBadge{stdone}{COMPLETED}\\
+5 & Short-list promising models                    & \StatusBadge{stwip}{IN PROGRESS}\\
+6 & Fine-tune the system                           & \StatusBadge{sttodo}{NOT STARTED}\\
+7 & Present your solution                          & \StatusBadge{stwip}{IN PROGRESS}\\
+8 & Launch, monitor, and maintain                  & \StatusBadge{sttodo}{NOT STARTED}\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Steps marked \emph{completed} are complete for the current end-to-end slice
+of the project; several are revisited as the modelling iterates (the
+checklist is a loop, not a straight line).
+
+% ===========================================================================
+\section{Frame the Problem and Look at the Big Picture}
+\SectionStatus{stdone}{COMPLETED}
+
+\begin{checklist}
+
+\chk{Define the objective in business terms.}
+Build an early-warning system for severe player-base decline in
+live-service (``replayable'') games, using Steam as the testbed, so that a
+studio, publisher, or live-ops team can prioritise interventions --- content
+updates, retention campaigns, pricing changes, community management ---
+before a player base becomes unrecoverable. The framing is documented in the
+project plan
+(\texttt{project\_documents/game\_decay\_forecasting\_project\_plan.qmd})
+and in the report draft (\texttt{report/report.qmd}).
+
+\chk{How will your solution be used?}
+As decision support for live-ops prioritisation. Because every game has its
+own longevity goals, the most flexible primary output is a forecast of the
+game's medium-term player-count level (relative to its own history), which
+acts as an early-warning signal; the project plan's headline deliverable
+builds on this with a calibrated severe-decline risk score and a risk-ranked
+watchlist.
+
+\chk{What are the current solutions/workarounds (if any)?}
+Manual monitoring of public trackers (SteamDB, SteamCharts) combined with
+analyst judgement and ad-hoc threshold rules. These are formalised inside
+the project as the baselines any model must beat: a constant
+(train-mean) predictor now, with last-value, moving-average, and log-linear
+decay baselines planned.
+
+\chk{How should you frame this problem (supervised/unsupervised, online/offline, etc.)?}
+Supervised, offline (batch) learning on historical data. The implemented
+task is regression on \emph{game-window} examples: a 60-day window of a
+game's daily player counts is used to predict the game's average player
+count over a 14-day window beginning 60 days after the input window ends,
+normalised by the game's \emph{causal peak} (the running maximum of its
+14-day rolling average) and modelled in log space:
+\[
+  y_t \;=\; \log\!\left(
+    \frac{\overline{\mathrm{CCU}}^{(14)}_{[\,t+61,\ t+74\,]}}
+         {\max_{s\le t}\ \overline{\mathrm{CCU}}^{(14)}_s}
+    \;+\; \varepsilon
+  \right),
+  \qquad \varepsilon = 0.01,
+\]
+where $\overline{\mathrm{CCU}}^{(14)}$ is the 14-day rolling mean of daily
+average concurrent users and $t$ is the last day of the input window. The
+project plan frames the eventual headline task as binary severe-decline
+classification; the current regression target is its continuous, supporting
+variant. Overlapping windows from one game are strongly correlated, so the
+effective sample size is roughly the number of games ($\approx$ 2{,}000),
+which shapes the validation design throughout.
+
+\chk{How should performance be measured?}
+Mean absolute error (MAE) on the log-space target, reported on a held-out
+test set against a constant dumb baseline. RMSE was used first and
+deliberately abandoned: the target is extremely heavy-tailed (values up to
+$60\times$ the causal peak), and under squared error the worst
+$\sim$1\% of points contributed $\sim$86\% of the total, swamping genuine
+skill. Log-space MAE reads directly as a typical multiplicative error. For
+the planned classifier stage: PR-AUC, precision@top-$K$, and calibration.
+
+\chk{Is the performance measure aligned with the business objective?}
+Yes. Log-space MAE is scale-free, so mega-hits and niche games weigh
+comparably, and it answers ``how far off, proportionally, is the forecast''
+--- the quantity a per-game intervention decision needs. Precision@top-$K$
+(planned) matches a live-ops team's limited intervention budget.
+
+\chk{What would be the minimum performance needed to reach the business objective?}
+The qualitative bar is fixed by the project plan: the model must clearly
+beat the naive baselines and simple threshold rules to justify existing.
+\pending[A quantitative minimum (e.g.\ a target multiplicative error) has
+not yet been set.]
+
+\chk{What are comparable problems? Can you reuse experience or tools?}
+Customer-churn prediction, demand forecasting, and survival analysis;
+technically, sliding-window time-series regression. Reused: the standard
+Python stack (pandas, NumPy, scikit-learn, matplotlib), this checklist's
+workflow, and the dataset's companion research (Vihanga~et~al., IEEE CoG
+2019, DOI \texttt{10.1109/CIG.2019.8848108}) on player-population patterns.
+
+\chk{Is human expertise available?}
+The author's own domain familiarity with Steam and live-service player-base
+dynamics (used, e.g., in the \emph{Among Us} case study that stress-tested
+the definition of ``collapse''). No external domain expert is engaged.
+
+\chk{How would you solve the problem manually?}
+As an analyst would: plot the trajectory, compare the current level with the
+historical peak, estimate the recent trend and volatility, and extrapolate.
+This manual recipe directly motivated the five window-summary features
+(mean, standard deviation, max, min, net change).
+
+\chk{List the assumptions you or others have made so far.}
+(i)~Pre-COVID dynamics are representative --- data are clipped at
+2020-03-14; (ii)~concurrent players (CCU) proxies player-base health (it is
+\emph{not} daily active users); (iii)~the sample --- the top 2{,}000 games by
+player count on 11~Dec~2017 --- carries survivorship/selection bias, so
+conclusions may not transfer to smaller games; (iv)~the question is
+meaningful only for replayable games; (v)~windows from the same game are
+strongly correlated; (vi)~causal-peak normalisation makes games of different
+scales comparable; (vii)~a 60-day-ahead forecast is early enough to act on.
+
+\chk{Verify assumptions if possible.}
+Verified where the data allow: the COVID player-count inflation is visible
+in the series (hence the clip); the heavy tail of the target was confirmed
+by inspection of its distribution (motivating the log target and MAE); the
+same-game-correlation assumption is enforced structurally by a game-level
+train/test split; the dataset's two granularity tiers (5-minute vs hourly)
+are equalised by daily aggregation before any modelling.
+
+\end{checklist}
+
+% ===========================================================================
+\section{Get the Data}
+\SectionStatus{stdone}{COMPLETED}
+\guidance{automate as much as possible so you can easily get fresh data.}
+
+\begin{checklist}
+
+\chk{List the data you need and how much you need.}
+Multi-year, daily-resolution player-count histories for a large and varied
+set of games (thousands, since the effective sample size is the number of
+games), plus per-game metadata (tags, genres, prices) for later feature
+work.
+
+\chk{Find and document where you can get that data.}
+Mendeley Data: \emph{``Steam Games Dataset: Player count history, Price
+history and data about games''}, Wannigamage, Barlow, Lakshika \& Kasmarik
+(UNSW Canberra), 2020, DOI \texttt{10.17632/ycy3sy3vj2.1}, CC~BY~4.0
+(\url{https://data.mendeley.com/datasets/ycy3sy3vj2/1}). Chosen after a
+documented survey of alternatives (monthly SteamCharts derivatives, snapshot
+datasets, live trackers without bulk export), none of which offer daily,
+multi-game history.
+
+\chk{Check how much space it will take.}
+Raw data $\approx$ 13\,GB unpacked (Part~1: 5-minute samples for the top
+1{,}000 games; Part~2: hourly for the next 1{,}000). Processed daily
+aggregates: 54\,MB.
+
+\chk{Check legal obligations, and get the authorization if necessary.}
+Licensed CC~BY~4.0; attribution is given in the notebook, the report, and
+this document. No further authorisation required.
+
+\chk{Get access authorizations.}
+None needed --- public dataset.
+
+\chk{Create a workspace (with enough storage space).}
+Local git repository \texttt{player\_forecasting/} with
+\texttt{data/mendeley/} (raw, kept out of version control) and
+\texttt{data/avg\_daily/} (processed), plus \texttt{notebooks/},
+\texttt{report/}, and \texttt{project\_documents/}.
+
+\chk{Get the data.}
+Downloaded and unpacked: \texttt{PlayerCountHistory} Parts 1--2,
+application metadata (information, genres, tags, developers, publishers),
+and price history.
+
+\chk{Convert the data to a format you can easily manipulate (without changing the data itself).}
+Per-game 5-minute/hourly CSVs are aggregated to per-game \emph{daily
+average} CSVs in \texttt{data/avg\_daily/} (one file per game), then
+combined into a single games\,$\times$\,days matrix for modelling. Raw
+files are kept intact.
+
+\chk{Ensure sensitive information is deleted or protected.}
+The data are aggregate, public concurrent-player counts; no personal or
+sensitive information is present.
+
+\chk{Check the size and type of data.}
+Time series: 2{,}000 games $\times$ $\sim$970 days (2017-12-14 to
+2020-08-12), two sampling tiers equalised by daily aggregation. Analysis is
+restricted to the 822 pre-COVID days (up to 2020-03-14). Counts are
+heavy-tailed, spanning several orders of magnitude across games.
+
+\chk{Sample a test set, put it aside, and never look at it.}
+10\% of games (197 of the 1{,}997 usable games) are held out via a seeded
+game-level split \emph{before} any modelling. Splitting by game --- rather
+than by window --- guarantees that overlapping windows from one game never
+straddle the train/test boundary (no leakage). The test set is consulted
+only to report final numbers.
+
+\end{checklist}
+
+% ===========================================================================
+\section{Explore the Data}
+\SectionStatus{stdone}{COMPLETED}
+\guidance{try to get insights from a field expert for these steps.}
+
+\begin{checklist}
+
+\chk{Create a copy of the data for exploration.}
+All exploration works on derived copies (daily aggregates and in-memory
+dataframes); the raw Mendeley files are never modified.
+
+\chk{Create a Jupyter notebook to keep record of your data exploration.}
+\texttt{notebooks/data\_engineering.ipynb} records the full exploration and
+pipeline narrative; \texttt{data\_engineering.py} has been started to hold
+the reusable pieces.
+
+\chk{Study each attribute and its characteristics.}
+\begin{itemize}[leftmargin=1.4em, itemsep=0.2em]
+  \item \emph{Playercount} --- float concurrent users, $\ge 0$, unbounded
+        above; heavy-tailed (roughly logarithmic) across games; missing
+        entries at 5-minute granularity (dropped before aggregation) and
+        occasional full-day gaps (become NaNs, handled at windowing);
+        strong day-to-day jitter, studied via smoothing comparisons
+        (exponential moving average vs rolling mean).
+  \item \emph{Time} --- 5-minute/hourly timestamps, normalised to dates.
+  \item \emph{Tags} --- multi-valued categorical strings per game;
+        lower-cased, frequency-counted, top-30 inspected as candidate
+        features.
+\end{itemize}
+
+\chk{For supervised learning tasks, identify the target attribute(s).}
+Identified and implemented: the log-space, causally-normalised 14-day future
+average defined in \S1, item~4.
+
+\chk{Visualize the data.}
+Per-game trajectory plots; raw vs EMA vs rolling-average smoothing
+comparisons; histograms of the five engineered features; histogram of the
+target distribution (which exposed the heavy tail).
+
+\chk{Study the correlations between attributes.}
+Feature distributions have been studied individually.
+\pending[A systematic correlation / feature-redundancy analysis is pending.]
+
+\chk{Study how you would solve the problem manually.}
+Done --- see \S1, item~10; the manual recipe seeded the feature set.
+
+\chk{Identify the promising transformations you may want to apply.}
+Daily aggregation; 14-day rolling mean (jitter removal); causal-peak
+(expanding-maximum) normalisation; log transform of the target; log
+transform of the features (validated in supplementary benchmarks --- see
+\S5).
+
+\chk{Identify extra data that would be useful.}
+Game tags (frequency analysis done; one-hot encoding planned as the next
+feature source); price history (available in the dataset, leak-safe from
+2019-04); Twitch viewership noted in the report as a possible extension.
+
+\chk{Document what you have learned.}
+Documented across the notebook narrative, the Quarto report draft
+(\texttt{report/report.qmd}), the project plan, and this checklist report.
+
+\end{checklist}
+
+% ===========================================================================
+\section{Prepare the Data}
+\SectionStatus{stdone}{COMPLETED}
+\guidance{work on copies of the data; write functions for all
+transformations so they can be reapplied to fresh data, future projects,
+the test set, and new instances, and so preparation choices can be treated
+as hyperparameters.}
+
+All transformations are implemented as reusable functions
+(\texttt{to\_daily\_avg}, the window \texttt{extractor\_log},
+\texttt{to\_feature}); migration of these from the notebook into an
+importable module (\texttt{data\_engineering.py}) has begun.
+
+\begin{checklist}
+
+\chk{Data cleaning.}
+Rows with null player counts are dropped before aggregation; three games
+with fewer than 50 clean windows are removed (1{,}997 games remain); all
+series are clipped at 2020-03-14 to exclude the COVID regime; the window
+extractor skips any window contaminated by NaNs (sliding 14 days at a time,
+jumping 60 days when the input window itself is contaminated).
+
+\chk{Feature selection (optional).}
+The current slice deliberately uses player-count history only. Degenerate
+windows (window mean, max, or min exactly zero --- games effectively dead or
+unobserved) are filtered out of the design matrices.
+
+\chk{Feature engineering, where appropriate.}
+Daily average CCU $\rightarrow$ 14-day rolling mean $\rightarrow$
+causal-peak normalisation $\rightarrow$ 60-day input windows
+$\rightarrow$ five summary features per window: mean, standard deviation,
+maximum, minimum, and net change (last $-$ first). The target is
+log-transformed with $\varepsilon = 0.01$ (\S1, item~4). Log-transforming
+the four positive \emph{features} as well has been validated in
+supplementary experiments (\S5, item~3) and is queued for adoption in the
+notebook.
+
+\chk{Feature scaling: standardize or normalize features.}
+Causal-peak normalisation already places all games on a comparable
+$[0,1]$-ish scale, and the target is log-scaled. Explicit standardisation is
+applied where the algorithm requires it (kNN, SVR, and kernel-approximation
+models in the supplementary benchmarks); tree and linear models run on the
+features directly.
+
+\end{checklist}
+
+% ===========================================================================
+\section{Short-List Promising Models}
+\SectionStatus{stwip}{IN PROGRESS}
+\guidance{if the data is huge, sample smaller training sets; automate as
+much as possible.}
+
+\begin{checklist}
+
+\chk{Train many quick and dirty models from different categories.}
+In the notebook: a constant (train-mean) dumb baseline and ordinary linear
+regression on the five features ($\sim$89k train / $\sim$9.7k test window
+examples). In supplementary benchmark scripts run on the identical split:
+ridge regression on the raw 60-day window, $k$-nearest neighbours
+($k{=}20$), an RBF-kernel approximation + ridge, an RBF-kernel SVR (on an
+8k subsample --- full kernel methods do not scale to 89k points), and
+histogram gradient-boosted trees (on raw and log targets, raw and log
+features).
+
+\chk{Measure and compare their performance.}
+Held-out test MAE in log space: dumb baseline 0.933 (0.899 for the
+MAE-optimal constant, the train median); linear regression 0.530; gradient
+boosting 0.304; linear regression on log-transformed features 0.306.
+Interpreted multiplicatively: typical forecast error falls from
+$\times 2.5$ (dumb) to $\times 1.7$ (linear) to $\times 1.36$ (gradient
+boosting, or linear-on-log-features).
+\pending[$N$-fold cross-validation with mean~$\pm$~std per model is
+pending; all figures so far come from a single fixed game-level split.]
+
+\chk{Analyze the most significant variables for each algorithm.}
+The dominant structure identified so far is \emph{log-log linearity}:
+log-transforming the positive features moves linear regression from 0.530
+to 0.306, statistically matching gradient boosting --- i.e.\ the
+nonlinearity the trees exploit is essentially logarithmic curvature in the
+feature--target relationship. \pending[Formal per-model feature-importance
+analysis is pending.]
+
+\chk{Analyze the types of errors the models make.}
+Under squared error, unpredictable ``breakout'' games (future counts far
+above the historical peak) dominated: the worst $\sim$1\% of test points
+carried $\sim$86\% of the squared error, which motivated the switch to the
+log target and MAE. A human analyst would avoid these errors only with
+information from outside the count history --- patch and content-update
+schedules, sales, streamer coverage --- which is exactly the direction of
+the planned tag/price/exogenous features.
+
+\chk{Have a quick round of feature selection and engineering.}
+Completed once: raw daily inputs were replaced by 14-day rolling,
+causally-normalised inputs (removing jitter), the raw ratio target was
+replaced by its log, and log features were identified as the next
+adoption.
+
+\chk{Have one or two more quick iterations of the five previous steps.}
+One full loop is complete (raw target/features $\rightarrow$
+smoothed/log). \pending[Next loop planned: add tag features and re-run the
+comparison.]
+
+\chk{Short-list the top three to five most promising models.}
+Current short list: (i)~\textbf{linear regression on log features} ---
+interpretable and within noise of the best; (ii)~\textbf{histogram
+gradient-boosted trees} --- equally strong, handles NaNs and categorical
+(tag) features natively, the natural vehicle for the next feature round.
+Kernel SVMs were evaluated and ruled out (no accuracy gain over linear at
+$\mathcal{O}(n^2)$ kernel cost); $k$NN underperformed both finalists.
+
+\end{checklist}
+
+% ===========================================================================
+\section{Fine-Tune the System}
+\SectionStatus{sttodo}{NOT STARTED}
+\guidance{use as much data as possible; automate what you can.}
+
+\begin{checklist}
+
+\chk{Fine-tune the hyperparameters using cross-validation.}
+% Treat data-transformation choices as hyperparameters; prefer random
+% search over grid search (or Bayesian optimisation if training is slow).
+\blankanswer
+
+\chk{Try ensemble methods.}
+% Combining the best models will often perform better than running them
+% individually.
+\blankanswer
+
+\chk{Measure the final model's performance on the test set to estimate the generalization error.}
+\blankanswer
+
+\end{checklist}
+
+\begin{quote}\itshape\color{soft}
+Don't tweak your model after measuring the generalization error: you would
+just start overfitting the test set.
+\end{quote}
+
+% ===========================================================================
+\section{Present Your Solution}
+\SectionStatus{stwip}{IN PROGRESS}
+
+\begin{checklist}
+
+\chk{Document what you have done.}
+Ongoing throughout: the project plan (Quarto, with HTML/PDF renders), the
+technical report draft (\texttt{report/report.qmd} --- objective, scope,
+definition of ``player-base collapse'', dataset description, target
+definition, processing steps, with bibliography), the narrated pipeline
+notebook, and this checklist report.
+
+\chk{Create a nice presentation (highlight the big picture first).}
+\blankanswer
+
+\chk{Explain why your solution achieves the business objective.}
+Argued in draft form in the report: a continuous forecast of future
+player-count level (relative to a game's own peak) is the most flexible
+early-warning input because longevity goals differ per game.
+\pending[To be completed once final results are in.]
+
+\chk{Present interesting points you noticed along the way.}
+Collected so far --- \emph{what worked:} daily aggregation, 14-day rolling
+smoothing, causal-peak normalisation, the log target, and the game-level
+split. \emph{What did not:} RMSE as the headline metric (outlier-dominated),
+kernel SVMs (no gain over linear, poor scaling), and inverting a
+raw-feature linear model trained in log space back to the original scale.
+Assumptions and limitations are listed in \S1 and in the report's
+Limitations section.
+
+\chk{Ensure key findings are communicated through beautiful visualizations or easy-to-remember statements.}
+Candidate headline statements are drafted (``typical multiplicative
+forecast error $\times 1.36$, versus $\times 2.5$ for the dumb baseline'';
+``one log transform is worth a gradient-boosted model'').
+\pending[Final presentation-quality visualisations are pending.]
+
+\end{checklist}
+
+% ===========================================================================
+\section{Launch, Monitor, and Maintain}
+\SectionStatus{sttodo}{NOT STARTED}
+
+\begin{checklist}
+
+\chk{Get your solution ready for production.}
+% Plug into production data inputs, write unit tests, etc.
+\blankanswer
+
+\chk{Write monitoring code to check live performance and trigger alerts.}
+% Beware slow degradation (model rot); monitor input quality too.
+\blankanswer
+
+\chk{Retrain your models on a regular basis on fresh data.}
+% Automate as much as possible.
+\blankanswer
+
+\end{checklist}
+
+\end{document}

@@ -51,11 +51,11 @@ To generate training(/development) and test examples we will move a sliding set 
  t-55 .................. t   t+1 ............ t+56  t+57 ...... t+70
                                 (no data used)
 ```
-If any NaN values are detected in the input or target windows then the sample is rejected and the entire set of windows is shifted along by the width of the target window. Else, a data point is generated consisting of input features derived from the 56 input window playercounts and a target variable derived from the 14 day target counts, and the set of windows is shifted with a stride of 7 days.
+If any NaN values are detected in the input or target windows then the sample is rejected and the entire set of windows is shifted along by the width of the target window. Else, a data point is generated consisting of input features derived from the 56 input window playercounts and a target variable derived from the 14 day target counts, and the set of windows is shifted with a stride of 14 days.
 
 Since the sliding windows partialy overlap two data points can come from the same game's CNA playercounts which share data and therefore they must not be split into the train and test sets. For this reason we group the data by the game from which it arose and make a train/test split by the game's id after shuffling the games. For model development we will also therefore use grouped K-fold cross validation where the grouping is done by game id.
 
-This procedure applied to the dataset resulted in ~150k example data points to train/develop/test our models with. We will describe several choices made for the features and target variables over the course of exploring the space of models.
+This procedure applied to the dataset resulted in ~74k example data points to train/develop/test our models with. We will describe several choices made for the features and target variables over the course of exploring the space of models.
 
 ## Feature and target choices
 **Features**: Our raw input features are the 56 CNA playercounts. Of course as these are a time series they are heavily correlated to eachother and so a natural approach would be to try to distill these counts into a smaller set of summary statistics. However, since the precise features to use is tied to the particular model one is training, we will be more explicit about the input features on a model by model basis in the next sections.
@@ -90,7 +90,9 @@ For the linear extrapolation above we only used the boundary points of the windo
 | Linear fit to CNA | 1.331 |
 | Linear fit to log CNA | 1.039 |
 
-The three baselines are compared below on 50 randomly sampled training windows — drag the slider (or type a number) to browse them. The orange curve is the linear extrapolation using only the end points of the input window, the purple is a linear fit to the CNA playercounts of the input window and the green is a linear fit to the log of the CNA. The blue curve is the input window the models see; the actual CNA future values, which they do not, are shown in grey in the background.
+TODO: intro text for the example browser below.
+
+Various baseline model predictions on an example training window. The orange curve is a linear extrapolation using only the end points of the input window, the purple is a linear fit to the CNA playercounts of the input window and the green is a linear fit to the log of the CNA. The actual CNA future values are shown in the background.
 
 ```{=html}
 <style>
@@ -145,7 +147,16 @@ We use scikit-learn's HistGradientBoostingRegressor trained on an input consisti
 
 showing a vast improvement over the dummy model, even before any hyperparameter tuning.
 
-### Hyperparameter tuning does not help
+### Hyperparameter tuning (does not help)
+
+## Feature reduction: level dominates shape
+
+A natural direction at this point is to determine which features are leading to better model performance. To determine this we remove features one by one from the input and measure the (grouped 5-fold cross validated) RMSE of the HistGradientBoostingRegressor with default hyperparameters. The input array for a single example has the structure: [56 counts chronologically ordered, index of current time, log(causal peak)] and we start removing features from the end. We see that removing the last two features causes a jump in the error, beyond which removing each daily CNA count steadily makes the error worse and worse as expected. This is somewhat an obvious result but the initial jump in the error confirms that adding the "global" features of current time index and log(causal peak) provides useful information to the model.
+
+![The RMSE on the log target upon dropping features from the end of the input array. The first two data points are the "global" features, and dropping them leads to a large jump in the error. The final data point is the error when the input consists of a single CNA playercount (the oldest one in the input window).](figs/feature_ablation.svg){#fig-ablation width=100%}
+
+It is interesting to see that even when only including one feature which would be the first CNA count of the input window, the HistGBR is able to achieve an RMSE on the log target of around 0.60 which is still a vast improvement compared to the baseline models. 
+
 
 # The information ceiling
 
@@ -153,11 +164,7 @@ showing a vast improvement over the dummy model, even before any hyperparameter 
 experiment families all failed to improve on ~0.445, implying the remaining
 error is not model-limited but information-limited. One subsection each: -->
 
-## Feature reduction: level dominates shape
 
-<!-- TODO: reduction experiments. Two oldest window columns alone -> 0.58;
-last 3 features -> 0.50; full window -> 0.447 (dummy 1.05). Most of the
-model's skill is level-tracking; window shape contributes the final ~25%. -->
 
 ## Decay-rate features are redundant
 

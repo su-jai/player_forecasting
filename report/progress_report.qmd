@@ -165,9 +165,9 @@ We estimate the decay rate in two ways:
 
 | Features | CV RMSE (log target) |
 |---|---|
-| Window + time + log peak (no decay features) | 0.4465 |
-| Including decay rate $\lambda$ from method 1. | 0.4446 |
-| Including decay rate $\lambda$ from method 2. | 0.4422 |
+| Window + time + log peak (no decay features) | 0.4470 |
+| Including decay rate $\lambda$ from method 1. | 0.4469 |
+| Including decay rate $\lambda$ from method 2. | 0.4455 |
 
 Both of these features seem to improve the model performance but only negligably.
 
@@ -176,8 +176,18 @@ The underlying assumption that the CNA playercounts follow an exponential decay 
 $$\text{cna}(t) = N\left(e^{-\lambda t} - 1\right) + 1$$
 
 In this case the fitting is non-linear (`scipy.optimize.curve_fit`), so unlike the polyfit version
-it can fail to converge; those windows fall back to $(N, \lambda) = (0, 0)$.
+it can fail to converge. There may also not be sufficiently many datapoints from which to estimate the two parameters. In either of these cases we simply choose to reject the sample, which for our training dataset occurs 1.7% of the time. The model trained on these new features performs
 
+| Features | CV RMSE (log target) |
+|---|---|
+| Including | 0.4429 |
+
+It is clear that these decay rate features do not add significant information for the model to utilise.
+
+## Summary statistic features
+As one final attempt to formulate "orthogonal" features we take each 56 day CNA input window and distill it into a handful of summary statistics that aim to capture uncorrelated features of the input data for the model to learn from.
+
+# Error analysis
 
 
 # Conclusions

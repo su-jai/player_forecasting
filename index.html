@@ -2564,18 +2564,9 @@ border-left-color: #fd7e14 !important;
   <li><a href="#feature-reduction" id="toc-feature-reduction" class="nav-link" data-scroll-target="#feature-reduction"><span class="header-section-number">3.3</span> Feature reduction</a></li>
   <li><a href="#decay-rate-features" id="toc-decay-rate-features" class="nav-link" data-scroll-target="#decay-rate-features"><span class="header-section-number">3.4</span> Decay rate features</a></li>
   </ul></li>
-  <li><a href="#the-information-ceiling" id="toc-the-information-ceiling" class="nav-link" data-scroll-target="#the-information-ceiling"><span class="header-section-number">4</span> The information ceiling</a>
-  <ul class="collapse">
-  <li><a href="#decay-rate-features-are-redundant" id="toc-decay-rate-features-are-redundant" class="nav-link" data-scroll-target="#decay-rate-features-are-redundant"><span class="header-section-number">4.1</span> Decay-rate features are redundant</a></li>
-  <li><a href="#hyperparameter-search-a-flat-loss-surface" id="toc-hyperparameter-search-a-flat-loss-surface" class="nav-link" data-scroll-target="#hyperparameter-search-a-flat-loss-surface"><span class="header-section-number">4.2</span> Hyperparameter search: a flat loss surface</a></li>
-  <li><a href="#more-data-does-not-help" id="toc-more-data-does-not-help" class="nav-link" data-scroll-target="#more-data-does-not-help"><span class="header-section-number">4.3</span> More data does not help</a></li>
-  <li><a href="#static-metadata-is-redundant-with-behaviour" id="toc-static-metadata-is-redundant-with-behaviour" class="nav-link" data-scroll-target="#static-metadata-is-redundant-with-behaviour"><span class="header-section-number">4.4</span> Static metadata is redundant with behaviour</a></li>
-  </ul></li>
-  <li><a href="#error-analysis" id="toc-error-analysis" class="nav-link" data-scroll-target="#error-analysis"><span class="header-section-number">5</span> Error analysis</a></li>
-  <li><a href="#productisation-the-player-forecast-package" id="toc-productisation-the-player-forecast-package" class="nav-link" data-scroll-target="#productisation-the-player-forecast-package"><span class="header-section-number">6</span> Productisation: the <code>player-forecast</code> package</a></li>
-  <li><a href="#conclusions" id="toc-conclusions" class="nav-link" data-scroll-target="#conclusions"><span class="header-section-number">7</span> Conclusions</a></li>
-  <li><a href="#remaining-work" id="toc-remaining-work" class="nav-link" data-scroll-target="#remaining-work"><span class="header-section-number">8</span> Remaining work</a></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">9</span> References</a></li>
+  <li><a href="#conclusions" id="toc-conclusions" class="nav-link" data-scroll-target="#conclusions"><span class="header-section-number">4</span> Conclusions</a></li>
+  <li><a href="#remaining-work" id="toc-remaining-work" class="nav-link" data-scroll-target="#remaining-work"><span class="header-section-number">5</span> Remaining work</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">6</span> References</a></li>
   </ul>
 </nav>
 </div>
@@ -2786,107 +2777,47 @@ Figure 2: The RMSE on the log target upon dropping features from the end of the
 <section id="decay-rate-features" class="level2" data-number="3.4">
 <h2 data-number="3.4" class="anchored" data-anchor-id="decay-rate-features"><span class="header-section-number">3.4</span> Decay rate features</h2>
 <p>Based on the finding that CNA playercount data from before the input window contains information that can improve the RMSE of the tabular model we look for other features that could be added to the input based on this ‘global’ historic data. For example we first make the assumption that the CNA playercount declines exponentially from the causal peak and from this assumption we can estimate the ‘decay rate’ <span class="math inline">\(\lambda\)</span> and add this decay rate as a feature.</p>
-<p>The underlying assumption that the CNA playercounts follow an exponential decay after a causal peak is flawed in that it assumes the game’s playercount continually decreases after its all time high which is usually not the case. A better assumption would be to include some steady state mode to capture the signal of games that maintain a steady playerbase. For now, nonetheless let’s continue with this crude assumption.</p>
+<p>We estimate the decay rate in two ways:</p>
+<ol type="1">
+<li><span class="math inline">\(\lambda \approx \frac{1}{\text{time since peak}}\log\left(\text{CNA today} + 0.01\right)\)</span></li>
+<li>Slope of the linear regression of <span class="math inline">\(\log\left(\text{CNA}\right)\)</span> since the previous peak.</li>
+</ol>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Features</th>
+<th>CV RMSE (log target)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Window + time + log peak (no decay features)</td>
+<td>0.4465</td>
+</tr>
+<tr class="even">
+<td>Including decay rate <span class="math inline">\(\lambda\)</span> from method 1.</td>
+<td>0.4446</td>
+</tr>
+<tr class="odd">
+<td>Including decay rate <span class="math inline">\(\lambda\)</span> from method 2.</td>
+<td>0.4422</td>
+</tr>
+</tbody>
+</table>
+<p>Both of these features seem to improve the model performance but only negligably.</p>
+<p>The underlying assumption that the CNA playercounts follow an exponential decay after a causal peak is flawed in that it assumes the game’s playercount continually decreases after its all time high which is usually not the case. A better assumption would be to include some steady state mode to capture the signal of games that maintain a steady playerbase:</p>
+<p><span class="math display">\[\text{cna}(t) = N\left(e^{-\lambda t} - 1\right) + 1\]</span></p>
+<p>In this case the fitting is non-linear (<code>scipy.optimize.curve_fit</code>), so unlike the polyfit version it can fail to converge; those windows fall back to <span class="math inline">\((N, \lambda) = (0, 0)\)</span>.</p>
 </section>
 </section>
-<section id="the-information-ceiling" class="level1" data-number="4">
-<h1 data-number="4"><span class="header-section-number">4</span> The information ceiling</h1>
-<!-- This is the central scientific finding of the project: five independent
-experiment families all failed to improve on ~0.445, implying the remaining
-error is not model-limited but information-limited. One subsection each: -->
-<section id="decay-rate-features-are-redundant" class="level2" data-number="4.1">
-<h2 data-number="4.1" class="anchored" data-anchor-id="decay-rate-features-are-redundant"><span class="header-section-number">4.1</span> Decay-rate features are redundant</h2>
-<!-- TODO: two-point λ + time-since-peak -> 0.4441; polyfit λ -> 0.4455.
-Both within fold noise (~0.013) of baseline 0.4471. Interpretation:
-trajectories are near-Markovian — given current level and recent trend,
-older history adds nothing. Include the λ NaN-mask bug as a lessons-learned
-note (feature silently missing for gap-crossing windows; HistGBR's native
-NaN handling masked the failure). -->
+<section id="conclusions" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Conclusions</h1>
 </section>
-<section id="hyperparameter-search-a-flat-loss-surface" class="level2" data-number="4.2">
-<h2 data-number="4.2" class="anchored" data-anchor-id="hyperparameter-search-a-flat-loss-surface"><span class="header-section-number">4.2</span> Hyperparameter search: a flat loss surface</h2>
-<!-- TODO: 40-draw randomised search over 7 hyperparameters -> best 0.4416,
-i.e. under one standard error of fold noise; top-10 configs span 100× in
-capacity yet sit within 0.003 of each other. Defaults were already at the
-ceiling. -->
+<section id="remaining-work" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Remaining work</h1>
 </section>
-<section id="more-data-does-not-help" class="level2" data-number="4.3">
-<h2 data-number="4.3" class="anchored" data-anchor-id="more-data-does-not-help"><span class="header-section-number">4.3</span> More data does not help</h2>
-<!-- TODO: stride 7 instead of 14 doubles the training set (132,848 ->
-same games, denser windows) -> 0.4460, unchanged. Note the methodological
-trap fixed along the way: changing future_window changes the TARGET, not
-just the stride — the first version of this experiment was invalid. -->
-</section>
-<section id="static-metadata-is-redundant-with-behaviour" class="level2" data-number="4.4">
-<h2 data-number="4.4" class="anchored" data-anchor-id="static-metadata-is-redundant-with-behaviour"><span class="header-section-number">4.4</span> Static metadata is redundant with behaviour</h2>
-<!-- TODO: tag experiment (notebooks/tag_features.ipynb). Top-50 many-hot
-tags, train-only vocabulary. Window + tags -> 0.4450 vs 0.4461 (paired diff
-−0.0012, noise). But tags ALONE -> 0.9153 vs dummy 1.05 — tags carry real
-signal, all of it already expressed in the playercount trajectory.
-"What a game is" is subsumed by "how its playercount behaves". -->
-</section>
-</section>
-<section id="error-analysis" class="level1" data-number="5">
-<h1 data-number="5"><span class="header-section-number">5</span> Error analysis</h1>
-<!-- TODO: out-of-fold predictions via cross_val_predict; big errors defined
-as |residual| > 1. Three findings, one figure each (histograms big vs small
-errors):
-1. errors concentrate in windows near the START of the collection period
-   (selection bias: games sampled at their hype peak; immature causal
-   normalisation early on)
-2. errors concentrate at LOW log causal peak (< ~4.5, i.e. peaks under ~90
-   players): integer-level noise is proportionally huge in log space
-3. errors concentrate at HIGH fitted decay rate (mid-collapse games:
-   extrapolating fast transients 9 weeks out is intrinsically high-variance)
-Interpretation: error lives where the target is intrinsically least
-predictable — heteroscedastic, largely aleatoric. -->
-</section>
-<section id="productisation-the-player-forecast-package" class="level1" data-number="6">
-<h1 data-number="6"><span class="header-section-number">6</span> Productisation: the <code>player-forecast</code> package</h1>
-<!-- TODO: describe player_forecast/ — pip-installable package + CLI that
-turns the pipeline into a v0 product:
-- input: any daily playercount CSV (>= 56 days); output: predicted average
-  daily players for days 57-70 after the last observation
-- refuses rather than guesses: validation errors for short/gappy input,
-  out-of-domain warnings for small games
-- FEATURE_VERSION-stamped model artifacts; 16-test unittest suite
-- trained on all 1,486 games (147,668 windows — exactly reproducing the
-  notebook's extraction): CV RMSE 0.4652
-- one deliberate delta from the research configuration: the dataset-era
-  time-index feature is dropped (not computable for arbitrary dates) -->
-</section>
-<section id="conclusions" class="level1" data-number="7">
-<h1 data-number="7"><span class="header-section-number">7</span> Conclusions</h1>
-<!-- TODO: 3-4 paragraphs.
-- A rigorously-evaluated forecaster: ×/÷1.6 typical error at 9 weeks vs
-  ×/÷2.9 for no model, at the demonstrated information limit of
-  history-only forecasting.
-- The ceiling finding: five independent null results converge; remaining
-  error is event-driven (sales, updates, streamers) and irreducible without
-  time-varying external data.
-- Honest framing: the model answers the scale question (600k vs 60k vs 6k),
-  not the 20% question. -->
-</section>
-<section id="remaining-work" class="level1" data-number="8">
-<h1 data-number="8"><span class="header-section-number">8</span> Remaining work</h1>
-<!-- TODO, in priority order:
-1. FINAL TEST-SET EVALUATION — the 149 held-out games (14,820 windows) have
-   never been touched; the headline number of the finished report must come
-   from them, evaluated exactly once.
-2. Stratified metrics: RMSE by peak size and by period, so the blended 0.45
-   doesn't understate performance on established games.
-3. Quantile forecasts (HistGBR loss="quantile", 10/50/90%) for honest
-   uncertainty bands in the product.
-4. Time-varying external features — the only direction with a live
-   mechanism after the ceiling result: calendar seasonality, market-wide
-   activity index, sale/update events.
-5. Housekeeping: signed-residual check on the big-error segments; per-fold
-   score persistence (done for the package); model_scores key hygiene. -->
-</section>
-<section id="references" class="level1" data-number="9">
-<h1 data-number="9"><span class="header-section-number">9</span> References</h1>
-<!-- @wannigamage2020 is already in references.bib (check); add sklearn
-citation if desired. -->
+<section id="references" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> References</h1>
 <!-- -->
 
 </section>
@@ -3516,112 +3447,36 @@ citation if desired. -->
 <span id="cb1-157"><a href="#cb1-157" aria-hidden="true" tabindex="-1"></a><span class="fu">## Decay rate features</span></span>
 <span id="cb1-158"><a href="#cb1-158" aria-hidden="true" tabindex="-1"></a>Based on the finding that CNA playercount data from before the input window contains information that can improve the RMSE of the tabular model we look for other features that could be added to the input based on this &#39;global&#39; historic data. For example we first make the assumption that the CNA playercount declines exponentially from the causal peak and from this assumption we can estimate the &#39;decay rate&#39; $\lambda$ and add this decay rate as a feature. </span>
 <span id="cb1-159"><a href="#cb1-159" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-160"><a href="#cb1-160" aria-hidden="true" tabindex="-1"></a>The underlying assumption that the CNA playercounts follow an exponential decay after a causal peak is flawed in that it assumes the game&#39;s playercount continually decreases after its all time high which is usually not the case. A better assumption would be to include some steady state mode to capture the signal of games that maintain a steady playerbase. For now, nonetheless let&#39;s continue with this crude assumption.</span>
+<span id="cb1-160"><a href="#cb1-160" aria-hidden="true" tabindex="-1"></a>We estimate the decay rate in two ways:</span>
 <span id="cb1-161"><a href="#cb1-161" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-162"><a href="#cb1-162" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-163"><a href="#cb1-163" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-162"><a href="#cb1-162" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>$\lambda \approx \frac{1}{\text{time since peak}}\log\left(\text{CNA today} + 0.01\right)$</span>
+<span id="cb1-163"><a href="#cb1-163" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Slope of the linear regression of $\log\left(\text{CNA}\right)$ since the previous peak.</span>
 <span id="cb1-164"><a href="#cb1-164" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-165"><a href="#cb1-165" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-166"><a href="#cb1-166" aria-hidden="true" tabindex="-1"></a><span class="fu"># The information ceiling</span></span>
-<span id="cb1-167"><a href="#cb1-167" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-168"><a href="#cb1-168" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- This is the central scientific finding of the project: five independent</span></span>
-<span id="cb1-169"><a href="#cb1-169" aria-hidden="true" tabindex="-1"></a><span class="co">experiment families all failed to improve on ~0.445, implying the remaining</span></span>
-<span id="cb1-170"><a href="#cb1-170" aria-hidden="true" tabindex="-1"></a><span class="co">error is not model-limited but information-limited. One subsection each: --&gt;</span></span>
+<span id="cb1-166"><a href="#cb1-166" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Features <span class="pp">|</span> CV RMSE (log target) <span class="pp">|</span></span>
+<span id="cb1-167"><a href="#cb1-167" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|</span></span>
+<span id="cb1-168"><a href="#cb1-168" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Window + time + log peak (no decay features) <span class="pp">|</span> 0.4465 <span class="pp">|</span></span>
+<span id="cb1-169"><a href="#cb1-169" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Including decay rate $\lambda$ from method 1. <span class="pp">|</span> 0.4446 <span class="pp">|</span></span>
+<span id="cb1-170"><a href="#cb1-170" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Including decay rate $\lambda$ from method 2. <span class="pp">|</span> 0.4422 <span class="pp">|</span></span>
 <span id="cb1-171"><a href="#cb1-171" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-172"><a href="#cb1-172" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-172"><a href="#cb1-172" aria-hidden="true" tabindex="-1"></a>Both of these features seem to improve the model performance but only negligably.</span>
 <span id="cb1-173"><a href="#cb1-173" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-174"><a href="#cb1-174" aria-hidden="true" tabindex="-1"></a><span class="fu">## Decay-rate features are redundant</span></span>
+<span id="cb1-174"><a href="#cb1-174" aria-hidden="true" tabindex="-1"></a>The underlying assumption that the CNA playercounts follow an exponential decay after a causal peak is flawed in that it assumes the game&#39;s playercount continually decreases after its all time high which is usually not the case. A better assumption would be to include some steady state mode to capture the signal of games that maintain a steady playerbase:</span>
 <span id="cb1-175"><a href="#cb1-175" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-176"><a href="#cb1-176" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- </span><span class="al">TODO</span><span class="co">: two-point λ + time-since-peak -&gt; 0.4441; polyfit λ -&gt; 0.4455.</span></span>
-<span id="cb1-177"><a href="#cb1-177" aria-hidden="true" tabindex="-1"></a><span class="co">Both within fold noise (~0.013) of baseline 0.4471. Interpretation:</span></span>
-<span id="cb1-178"><a href="#cb1-178" aria-hidden="true" tabindex="-1"></a><span class="co">trajectories are near-Markovian — given current level and recent trend,</span></span>
-<span id="cb1-179"><a href="#cb1-179" aria-hidden="true" tabindex="-1"></a><span class="co">older history adds nothing. Include the λ NaN-mask bug as a lessons-learned</span></span>
-<span id="cb1-180"><a href="#cb1-180" aria-hidden="true" tabindex="-1"></a><span class="co">note (feature silently missing for gap-crossing windows; HistGBR&#39;s native</span></span>
-<span id="cb1-181"><a href="#cb1-181" aria-hidden="true" tabindex="-1"></a><span class="co">NaN handling masked the failure). --&gt;</span></span>
+<span id="cb1-176"><a href="#cb1-176" aria-hidden="true" tabindex="-1"></a>$$\text{cna}(t) = N\left(e^{-\lambda t} - 1\right) + 1$$</span>
+<span id="cb1-177"><a href="#cb1-177" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-178"><a href="#cb1-178" aria-hidden="true" tabindex="-1"></a>In this case the fitting is non-linear (<span class="in">`scipy.optimize.curve_fit`</span>), so unlike the polyfit version</span>
+<span id="cb1-179"><a href="#cb1-179" aria-hidden="true" tabindex="-1"></a>it can fail to converge; those windows fall back to $(N, \lambda) = (0, 0)$.</span>
+<span id="cb1-180"><a href="#cb1-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-181"><a href="#cb1-181" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-182"><a href="#cb1-182" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-183"><a href="#cb1-183" aria-hidden="true" tabindex="-1"></a><span class="fu">## Hyperparameter search: a flat loss surface</span></span>
+<span id="cb1-183"><a href="#cb1-183" aria-hidden="true" tabindex="-1"></a><span class="fu"># Conclusions</span></span>
 <span id="cb1-184"><a href="#cb1-184" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-185"><a href="#cb1-185" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- </span><span class="al">TODO</span><span class="co">: 40-draw randomised search over 7 hyperparameters -&gt; best 0.4416,</span></span>
-<span id="cb1-186"><a href="#cb1-186" aria-hidden="true" tabindex="-1"></a><span class="co">i.e. under one standard error of fold noise; top-10 configs span 100× in</span></span>
-<span id="cb1-187"><a href="#cb1-187" aria-hidden="true" tabindex="-1"></a><span class="co">capacity yet sit within 0.003 of each other. Defaults were already at the</span></span>
-<span id="cb1-188"><a href="#cb1-188" aria-hidden="true" tabindex="-1"></a><span class="co">ceiling. --&gt;</span></span>
-<span id="cb1-189"><a href="#cb1-189" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-190"><a href="#cb1-190" aria-hidden="true" tabindex="-1"></a><span class="fu">## More data does not help</span></span>
-<span id="cb1-191"><a href="#cb1-191" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-192"><a href="#cb1-192" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- </span><span class="al">TODO</span><span class="co">: stride 7 instead of 14 doubles the training set (132,848 -&gt;</span></span>
-<span id="cb1-193"><a href="#cb1-193" aria-hidden="true" tabindex="-1"></a><span class="co">same games, denser windows) -&gt; 0.4460, unchanged. Note the methodological</span></span>
-<span id="cb1-194"><a href="#cb1-194" aria-hidden="true" tabindex="-1"></a><span class="co">trap fixed along the way: changing future_window changes the TARGET, not</span></span>
-<span id="cb1-195"><a href="#cb1-195" aria-hidden="true" tabindex="-1"></a><span class="co">just the stride — the first version of this experiment was invalid. --&gt;</span></span>
-<span id="cb1-196"><a href="#cb1-196" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-197"><a href="#cb1-197" aria-hidden="true" tabindex="-1"></a><span class="fu">## Static metadata is redundant with behaviour</span></span>
-<span id="cb1-198"><a href="#cb1-198" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-199"><a href="#cb1-199" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- </span><span class="al">TODO</span><span class="co">: tag experiment (notebooks/tag_features.ipynb). Top-50 many-hot</span></span>
-<span id="cb1-200"><a href="#cb1-200" aria-hidden="true" tabindex="-1"></a><span class="co">tags, train-only vocabulary. Window + tags -&gt; 0.4450 vs 0.4461 (paired diff</span></span>
-<span id="cb1-201"><a href="#cb1-201" aria-hidden="true" tabindex="-1"></a><span class="co">−0.0012, noise). But tags ALONE -&gt; 0.9153 vs dummy 1.05 — tags carry real</span></span>
-<span id="cb1-202"><a href="#cb1-202" aria-hidden="true" tabindex="-1"></a><span class="co">signal, all of it already expressed in the playercount trajectory.</span></span>
-<span id="cb1-203"><a href="#cb1-203" aria-hidden="true" tabindex="-1"></a><span class="co">&quot;What a game is&quot; is subsumed by &quot;how its playercount behaves&quot;. --&gt;</span></span>
-<span id="cb1-204"><a href="#cb1-204" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-205"><a href="#cb1-205" aria-hidden="true" tabindex="-1"></a><span class="fu"># Error analysis</span></span>
-<span id="cb1-206"><a href="#cb1-206" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-207"><a href="#cb1-207" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- </span><span class="al">TODO</span><span class="co">: out-of-fold predictions via cross_val_predict; big errors defined</span></span>
-<span id="cb1-208"><a href="#cb1-208" aria-hidden="true" tabindex="-1"></a><span class="co">as |residual| &gt; 1. Three findings, one figure each (histograms big vs small</span></span>
-<span id="cb1-209"><a href="#cb1-209" aria-hidden="true" tabindex="-1"></a><span class="co">errors):</span></span>
-<span id="cb1-210"><a href="#cb1-210" aria-hidden="true" tabindex="-1"></a><span class="co">1. errors concentrate in windows near the START of the collection period</span></span>
-<span id="cb1-211"><a href="#cb1-211" aria-hidden="true" tabindex="-1"></a><span class="co">   (selection bias: games sampled at their hype peak; immature causal</span></span>
-<span id="cb1-212"><a href="#cb1-212" aria-hidden="true" tabindex="-1"></a><span class="co">   normalisation early on)</span></span>
-<span id="cb1-213"><a href="#cb1-213" aria-hidden="true" tabindex="-1"></a><span class="co">2. errors concentrate at LOW log causal peak (&lt; ~4.5, i.e. peaks under ~90</span></span>
-<span id="cb1-214"><a href="#cb1-214" aria-hidden="true" tabindex="-1"></a><span class="co">   players): integer-level noise is proportionally huge in log space</span></span>
-<span id="cb1-215"><a href="#cb1-215" aria-hidden="true" tabindex="-1"></a><span class="co">3. errors concentrate at HIGH fitted decay rate (mid-collapse games:</span></span>
-<span id="cb1-216"><a href="#cb1-216" aria-hidden="true" tabindex="-1"></a><span class="co">   extrapolating fast transients 9 weeks out is intrinsically high-variance)</span></span>
-<span id="cb1-217"><a href="#cb1-217" aria-hidden="true" tabindex="-1"></a><span class="co">Interpretation: error lives where the target is intrinsically least</span></span>
-<span id="cb1-218"><a href="#cb1-218" aria-hidden="true" tabindex="-1"></a><span class="co">predictable — heteroscedastic, largely aleatoric. --&gt;</span></span>
-<span id="cb1-219"><a href="#cb1-219" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-220"><a href="#cb1-220" aria-hidden="true" tabindex="-1"></a><span class="fu"># Productisation: the `player-forecast` package</span></span>
-<span id="cb1-221"><a href="#cb1-221" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-222"><a href="#cb1-222" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- </span><span class="al">TODO</span><span class="co">: describe player_forecast/ — pip-installable package + CLI that</span></span>
-<span id="cb1-223"><a href="#cb1-223" aria-hidden="true" tabindex="-1"></a><span class="co">turns the pipeline into a v0 product:</span></span>
-<span id="cb1-224"><a href="#cb1-224" aria-hidden="true" tabindex="-1"></a><span class="co">- input: any daily playercount CSV (&gt;= 56 days); output: predicted average</span></span>
-<span id="cb1-225"><a href="#cb1-225" aria-hidden="true" tabindex="-1"></a><span class="co">  daily players for days 57-70 after the last observation</span></span>
-<span id="cb1-226"><a href="#cb1-226" aria-hidden="true" tabindex="-1"></a><span class="co">- refuses rather than guesses: validation errors for short/gappy input,</span></span>
-<span id="cb1-227"><a href="#cb1-227" aria-hidden="true" tabindex="-1"></a><span class="co">  out-of-domain warnings for small games</span></span>
-<span id="cb1-228"><a href="#cb1-228" aria-hidden="true" tabindex="-1"></a><span class="co">- FEATURE_VERSION-stamped model artifacts; 16-test unittest suite</span></span>
-<span id="cb1-229"><a href="#cb1-229" aria-hidden="true" tabindex="-1"></a><span class="co">- trained on all 1,486 games (147,668 windows — exactly reproducing the</span></span>
-<span id="cb1-230"><a href="#cb1-230" aria-hidden="true" tabindex="-1"></a><span class="co">  notebook&#39;s extraction): CV RMSE 0.4652</span></span>
-<span id="cb1-231"><a href="#cb1-231" aria-hidden="true" tabindex="-1"></a><span class="co">- one deliberate delta from the research configuration: the dataset-era</span></span>
-<span id="cb1-232"><a href="#cb1-232" aria-hidden="true" tabindex="-1"></a><span class="co">  time-index feature is dropped (not computable for arbitrary dates) --&gt;</span></span>
-<span id="cb1-233"><a href="#cb1-233" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-234"><a href="#cb1-234" aria-hidden="true" tabindex="-1"></a><span class="fu"># Conclusions</span></span>
-<span id="cb1-235"><a href="#cb1-235" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-236"><a href="#cb1-236" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- </span><span class="al">TODO</span><span class="co">: 3-4 paragraphs.</span></span>
-<span id="cb1-237"><a href="#cb1-237" aria-hidden="true" tabindex="-1"></a><span class="co">- A rigorously-evaluated forecaster: ×/÷1.6 typical error at 9 weeks vs</span></span>
-<span id="cb1-238"><a href="#cb1-238" aria-hidden="true" tabindex="-1"></a><span class="co">  ×/÷2.9 for no model, at the demonstrated information limit of</span></span>
-<span id="cb1-239"><a href="#cb1-239" aria-hidden="true" tabindex="-1"></a><span class="co">  history-only forecasting.</span></span>
-<span id="cb1-240"><a href="#cb1-240" aria-hidden="true" tabindex="-1"></a><span class="co">- The ceiling finding: five independent null results converge; remaining</span></span>
-<span id="cb1-241"><a href="#cb1-241" aria-hidden="true" tabindex="-1"></a><span class="co">  error is event-driven (sales, updates, streamers) and irreducible without</span></span>
-<span id="cb1-242"><a href="#cb1-242" aria-hidden="true" tabindex="-1"></a><span class="co">  time-varying external data.</span></span>
-<span id="cb1-243"><a href="#cb1-243" aria-hidden="true" tabindex="-1"></a><span class="co">- Honest framing: the model answers the scale question (600k vs 60k vs 6k),</span></span>
-<span id="cb1-244"><a href="#cb1-244" aria-hidden="true" tabindex="-1"></a><span class="co">  not the 20% question. --&gt;</span></span>
-<span id="cb1-245"><a href="#cb1-245" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-246"><a href="#cb1-246" aria-hidden="true" tabindex="-1"></a><span class="fu"># Remaining work</span></span>
-<span id="cb1-247"><a href="#cb1-247" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-248"><a href="#cb1-248" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- </span><span class="al">TODO</span><span class="co">, in priority order:</span></span>
-<span id="cb1-249"><a href="#cb1-249" aria-hidden="true" tabindex="-1"></a><span class="co">1. FINAL </span><span class="al">TEST</span><span class="co">-SET EVALUATION — the 149 held-out games (14,820 windows) have</span></span>
-<span id="cb1-250"><a href="#cb1-250" aria-hidden="true" tabindex="-1"></a><span class="co">   never been touched; the headline number of the finished report must come</span></span>
-<span id="cb1-251"><a href="#cb1-251" aria-hidden="true" tabindex="-1"></a><span class="co">   from them, evaluated exactly once.</span></span>
-<span id="cb1-252"><a href="#cb1-252" aria-hidden="true" tabindex="-1"></a><span class="co">2. Stratified metrics: RMSE by peak size and by period, so the blended 0.45</span></span>
-<span id="cb1-253"><a href="#cb1-253" aria-hidden="true" tabindex="-1"></a><span class="co">   doesn&#39;t understate performance on established games.</span></span>
-<span id="cb1-254"><a href="#cb1-254" aria-hidden="true" tabindex="-1"></a><span class="co">3. Quantile forecasts (HistGBR loss=&quot;quantile&quot;, 10/50/90%) for honest</span></span>
-<span id="cb1-255"><a href="#cb1-255" aria-hidden="true" tabindex="-1"></a><span class="co">   uncertainty bands in the product.</span></span>
-<span id="cb1-256"><a href="#cb1-256" aria-hidden="true" tabindex="-1"></a><span class="co">4. Time-varying external features — the only direction with a live</span></span>
-<span id="cb1-257"><a href="#cb1-257" aria-hidden="true" tabindex="-1"></a><span class="co">   mechanism after the ceiling result: calendar seasonality, market-wide</span></span>
-<span id="cb1-258"><a href="#cb1-258" aria-hidden="true" tabindex="-1"></a><span class="co">   activity index, sale/update events.</span></span>
-<span id="cb1-259"><a href="#cb1-259" aria-hidden="true" tabindex="-1"></a><span class="co">5. Housekeeping: signed-residual check on the big-error segments; per-fold</span></span>
-<span id="cb1-260"><a href="#cb1-260" aria-hidden="true" tabindex="-1"></a><span class="co">   score persistence (done for the package); model_scores key hygiene. --&gt;</span></span>
-<span id="cb1-261"><a href="#cb1-261" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-262"><a href="#cb1-262" aria-hidden="true" tabindex="-1"></a><span class="fu"># References</span></span>
-<span id="cb1-263"><a href="#cb1-263" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-264"><a href="#cb1-264" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- @wannigamage2020 is already in references.bib (check); add sklearn</span></span>
-<span id="cb1-265"><a href="#cb1-265" aria-hidden="true" tabindex="-1"></a><span class="co">citation if desired. --&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
+<span id="cb1-185"><a href="#cb1-185" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-186"><a href="#cb1-186" aria-hidden="true" tabindex="-1"></a><span class="fu"># Remaining work</span></span>
+<span id="cb1-187"><a href="#cb1-187" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-188"><a href="#cb1-188" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-189"><a href="#cb1-189" aria-hidden="true" tabindex="-1"></a><span class="fu"># References</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 

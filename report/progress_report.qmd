@@ -46,11 +46,7 @@ The dataset has been truncated at the 14th of March 2020, approximately the begi
 ## Sliding window data extraction
 
 To generate training(/development) and test examples we will move a sliding set of windows over the CNA playercounts for each game which have the structure:
-```
-[<--- 56d input window --->][<--- 56d embargo --->][<- 14d target ->]
- t-55 .................. t   t+1 ............ t+56  t+57 ...... t+70
-                                (no data used)
-```
+![TODO caption](figs/sliding_window.svg){#fig-sliding-window width=100%}
 If any NaN values are detected in the input or target windows then the sample is rejected and the entire set of windows is shifted along by the width of the target window. Else, a data point is generated consisting of input features derived from the 56 input window playercounts and a target variable derived from the 14 day target counts, and the set of windows is shifted with a stride of 14 days.
 
 Since the sliding windows partialy overlap two data points can come from the same game's CNA playercounts which share data and therefore they must not be split into the train and test sets. For this reason we group the data by the game from which it arose and make a train/test split by the game's id after shuffling the games. For model development we will also therefore use grouped K-fold cross validation where the grouping is done by game id.
@@ -149,13 +145,22 @@ showing a vast improvement over the dummy model, even before any hyperparameter 
 
 ### Hyperparameter tuning (does not help)
 
-## Feature reduction: level dominates shape
+## Feature reduction
 
 A natural direction at this point is to determine which features are leading to better model performance. To determine this we remove features one by one from the input and measure the (grouped 5-fold cross validated) RMSE of the HistGradientBoostingRegressor with default hyperparameters. The input array for a single example has the structure: [56 counts chronologically ordered, index of current time, log(causal peak)] and we start removing features from the end. We see that removing the last two features causes a jump in the error, beyond which removing each daily CNA count steadily makes the error worse and worse as expected. This is somewhat an obvious result but the initial jump in the error confirms that adding the "global" features of current time index and log(causal peak) provides useful information to the model.
 
 ![The RMSE on the log target upon dropping features from the end of the input array. The first two data points are the "global" features, and dropping them leads to a large jump in the error. The final data point is the error when the input consists of a single CNA playercount (the oldest one in the input window).](figs/feature_ablation.svg){#fig-ablation width=100%}
 
 It is interesting to see that even when only including one feature which would be the first CNA count of the input window, the HistGBR is able to achieve an RMSE on the log target of around 0.60 which is still a vast improvement compared to the baseline models. 
+
+
+## Decay rate features
+Based on the finding that CNA playercount data from before the input window contains information that can improve the RMSE of the tabular model we look for other features that could be added to the input based on this 'global' historic data. For example we first make the assumption that the CNA playercount declines exponentially from the causal peak and from this assumption we can estimate the 'decay rate' $\lambda$ and add this decay rate as a feature. 
+
+The underlying assumption that the CNA playercounts follow an exponential decay after a causal peak is flawed in that it assumes the game's playercount continually decreases after its all time high which is usually not the case. A better assumption would be to include some steady state mode to capture the signal of games that maintain a steady playerbase. For now, nonetheless let's continue with this crude assumption.
+
+
+
 
 
 # The information ceiling

@@ -157,109 +157,33 @@ It is interesting to see that even when only including one feature which would b
 ## Decay rate features
 Based on the finding that CNA playercount data from before the input window contains information that can improve the RMSE of the tabular model we look for other features that could be added to the input based on this 'global' historic data. For example we first make the assumption that the CNA playercount declines exponentially from the causal peak and from this assumption we can estimate the 'decay rate' $\lambda$ and add this decay rate as a feature. 
 
-The underlying assumption that the CNA playercounts follow an exponential decay after a causal peak is flawed in that it assumes the game's playercount continually decreases after its all time high which is usually not the case. A better assumption would be to include some steady state mode to capture the signal of games that maintain a steady playerbase. For now, nonetheless let's continue with this crude assumption.
+We estimate the decay rate in two ways:
+
+1. $\lambda \approx \frac{1}{\text{time since peak}}\log\left(\text{CNA today} + 0.01\right)$
+2. Slope of the linear regression of $\log\left(\text{CNA}\right)$ since the previous peak.
 
 
+| Features | CV RMSE (log target) |
+|---|---|
+| Window + time + log peak (no decay features) | 0.4465 |
+| Including decay rate $\lambda$ from method 1. | 0.4446 |
+| Including decay rate $\lambda$ from method 2. | 0.4422 |
+
+Both of these features seem to improve the model performance but only negligably.
+
+The underlying assumption that the CNA playercounts follow an exponential decay after a causal peak is flawed in that it assumes the game's playercount continually decreases after its all time high which is usually not the case. A better assumption would be to include some steady state mode to capture the signal of games that maintain a steady playerbase:
+
+$$\text{cna}(t) = N\left(e^{-\lambda t} - 1\right) + 1$$
+
+In this case the fitting is non-linear (`scipy.optimize.curve_fit`), so unlike the polyfit version
+it can fail to converge; those windows fall back to $(N, \lambda) = (0, 0)$.
 
 
-
-# The information ceiling
-
-<!-- This is the central scientific finding of the project: five independent
-experiment families all failed to improve on ~0.445, implying the remaining
-error is not model-limited but information-limited. One subsection each: -->
-
-
-
-## Decay-rate features are redundant
-
-<!-- TODO: two-point λ + time-since-peak -> 0.4441; polyfit λ -> 0.4455.
-Both within fold noise (~0.013) of baseline 0.4471. Interpretation:
-trajectories are near-Markovian — given current level and recent trend,
-older history adds nothing. Include the λ NaN-mask bug as a lessons-learned
-note (feature silently missing for gap-crossing windows; HistGBR's native
-NaN handling masked the failure). -->
-
-## Hyperparameter search: a flat loss surface
-
-<!-- TODO: 40-draw randomised search over 7 hyperparameters -> best 0.4416,
-i.e. under one standard error of fold noise; top-10 configs span 100× in
-capacity yet sit within 0.003 of each other. Defaults were already at the
-ceiling. -->
-
-## More data does not help
-
-<!-- TODO: stride 7 instead of 14 doubles the training set (132,848 ->
-same games, denser windows) -> 0.4460, unchanged. Note the methodological
-trap fixed along the way: changing future_window changes the TARGET, not
-just the stride — the first version of this experiment was invalid. -->
-
-## Static metadata is redundant with behaviour
-
-<!-- TODO: tag experiment (notebooks/tag_features.ipynb). Top-50 many-hot
-tags, train-only vocabulary. Window + tags -> 0.4450 vs 0.4461 (paired diff
-−0.0012, noise). But tags ALONE -> 0.9153 vs dummy 1.05 — tags carry real
-signal, all of it already expressed in the playercount trajectory.
-"What a game is" is subsumed by "how its playercount behaves". -->
-
-# Error analysis
-
-<!-- TODO: out-of-fold predictions via cross_val_predict; big errors defined
-as |residual| > 1. Three findings, one figure each (histograms big vs small
-errors):
-1. errors concentrate in windows near the START of the collection period
-   (selection bias: games sampled at their hype peak; immature causal
-   normalisation early on)
-2. errors concentrate at LOW log causal peak (< ~4.5, i.e. peaks under ~90
-   players): integer-level noise is proportionally huge in log space
-3. errors concentrate at HIGH fitted decay rate (mid-collapse games:
-   extrapolating fast transients 9 weeks out is intrinsically high-variance)
-Interpretation: error lives where the target is intrinsically least
-predictable — heteroscedastic, largely aleatoric. -->
-
-# Productisation: the `player-forecast` package
-
-<!-- TODO: describe player_forecast/ — pip-installable package + CLI that
-turns the pipeline into a v0 product:
-- input: any daily playercount CSV (>= 56 days); output: predicted average
-  daily players for days 57-70 after the last observation
-- refuses rather than guesses: validation errors for short/gappy input,
-  out-of-domain warnings for small games
-- FEATURE_VERSION-stamped model artifacts; 16-test unittest suite
-- trained on all 1,486 games (147,668 windows — exactly reproducing the
-  notebook's extraction): CV RMSE 0.4652
-- one deliberate delta from the research configuration: the dataset-era
-  time-index feature is dropped (not computable for arbitrary dates) -->
 
 # Conclusions
 
-<!-- TODO: 3-4 paragraphs.
-- A rigorously-evaluated forecaster: ×/÷1.6 typical error at 9 weeks vs
-  ×/÷2.9 for no model, at the demonstrated information limit of
-  history-only forecasting.
-- The ceiling finding: five independent null results converge; remaining
-  error is event-driven (sales, updates, streamers) and irreducible without
-  time-varying external data.
-- Honest framing: the model answers the scale question (600k vs 60k vs 6k),
-  not the 20% question. -->
 
 # Remaining work
 
-<!-- TODO, in priority order:
-1. FINAL TEST-SET EVALUATION — the 149 held-out games (14,820 windows) have
-   never been touched; the headline number of the finished report must come
-   from them, evaluated exactly once.
-2. Stratified metrics: RMSE by peak size and by period, so the blended 0.45
-   doesn't understate performance on established games.
-3. Quantile forecasts (HistGBR loss="quantile", 10/50/90%) for honest
-   uncertainty bands in the product.
-4. Time-varying external features — the only direction with a live
-   mechanism after the ceiling result: calendar seasonality, market-wide
-   activity index, sale/update events.
-5. Housekeeping: signed-residual check on the big-error segments; per-fold
-   score persistence (done for the package); model_scores key hygiene. -->
 
 # References
-
-<!-- @wannigamage2020 is already in references.bib (check); add sklearn
-citation if desired. -->

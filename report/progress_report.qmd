@@ -160,7 +160,7 @@ Based on the finding that CNA playercount data from before the input window cont
 We estimate the decay rate in two ways:
 
 1. $\lambda \approx \frac{1}{\text{time since peak}}\log\left(\text{CNA today} + 0.01\right)$
-2. Slope of the linear regression of $\log\left(\text{CNA}\right)$ since the previous peak.
+2. $\lambda \approx$ $(-1)\times$ slope of the linear regression of $\log\left(\text{CNA}\right)$ since the previous peak.
 
 
 | Features | CV RMSE (log target) |
@@ -173,7 +173,7 @@ Both of these features seem to improve the model performance but only negligably
 
 The underlying assumption that the CNA playercounts follow an exponential decay after a causal peak is flawed in that it assumes the game's playercount continually decreases after its all time high which is usually not the case. A better assumption would be to include some steady state mode to capture the signal of games that maintain a steady playerbase:
 
-$$\text{cna}(t) = N\left(e^{-\lambda t} - 1\right) + 1$$
+$$\text{CNA}(t) = N\left(e^{-\lambda t} - 1\right) + 1$$
 
 In this case the fitting is non-linear (`scipy.optimize.curve_fit`), so unlike the polyfit version
 it can fail to converge. There may also not be sufficiently many datapoints from which to estimate the two parameters. In either of these cases we simply choose to reject the sample, which for our training dataset occurs 1.7% of the time. The model trained on these new features performs
@@ -183,6 +183,15 @@ it can fail to converge. There may also not be sufficiently many datapoints from
 | Including | 0.4429 |
 
 It is clear that these decay rate features do not add significant information for the model to utilise.
+
+# Aside: data extraction functions
+One thing I have noticed whilst experimenting with these models is that I find myself constantly copy and pasting the bulk of the code for the "extractor" functions (whose job it is to scan across the dataset and output datapoints which have a specific collection of features) for each new / different choice of features that I am testing on. There must be a better way to perform this sort of experimentation.
+
+A better way would be to separate these functions into their base components and combine them (i.e. modularise as much as possible). Immediately what comes to mind is to separate extractor functions which look only at the "local" input window of 56 days from the "global" functions which are extracting data which depends on the entire *past* temporal data at the $t=0$ point.
+
+For example rather than have a separate extractor function for estimating the decay rate using a linear fit to log CNA playercounts and estimating the decay rate using a two-point estimation as done above, we could just have one local extractor function (as these features only depend on the 56 day input window) which can take as an input whatever function is to be applied to the input window directly. 
+
+
 
 ## Summary statistic features
 As one final attempt to formulate "orthogonal" features we take each 56 day CNA input window and distill it into a handful of summary statistics that aim to capture uncorrelated features of the input data for the model to learn from.

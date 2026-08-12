@@ -16,6 +16,5 @@ I have made liberal useage of Claude Code in this project to help speed up the g
 
 # To do
 
-* Try further feature engineering to improve model performance.
 * Build some basic neural networks using PyTorch and compare performance against traditional ML algorithms.
 * Structure a working program that can be run in the terminal, from the contents of the ipynb notebooks.
